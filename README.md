@@ -144,6 +144,12 @@ LUT-adder/
 
 ---
 
+## 📚 Developer & Continuation Guide
+Looking to resume development, understand the internal architecture, or build the native executable from source?  
+See the full **[CONTINUATION_GUIDE.md](CONTINUATION_GUIDE.md)** for architecture diagrams, build instructions, and the roadmap.
+
+---
+
 ## 📄 License
 This project is licensed under the open-source **MIT License** - see the [LICENSE](LICENSE) file for details.
 All official DJI 3D LUTs are property of SZ DJI Technology Co., Ltd.
