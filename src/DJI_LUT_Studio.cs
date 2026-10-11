@@ -266,7 +266,7 @@ namespace DJILutStudio
                                     <Border Name='DropDownBorder' Background='#161B22' BorderThickness='1'
                                             BorderBrush='#30363D' CornerRadius='6' Margin='0,2,0,0'>
                                         <ScrollViewer Margin='4,6' SnapsToDevicePixels='True'>
-                                            <StackPanel IsItemsHost='True' KeyboardNavigation.DirectionalNavigation='Circular' />
+                                            <StackPanel IsItemsHost='True' />
                                         </ScrollViewer>
                                     </Border>
                                 </Grid>
