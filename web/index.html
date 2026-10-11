@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJI LUT Studio - Open Source Video Color Grading Suite</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>DJI LUT STUDIO</h1>
+          <span class="version-tag">v2.0.0 Open Source</span>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div id="gpuBadge" class="status-badge gpu-badge">
+          <span class="pulse-dot"></span>
+          <span id="gpuText">Detecting Hardware...</span>
+        </div>
+        <div class="status-badge count-badge">
+          <span id="lutCountText">48 3D LUTs Loaded</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
+      <div class="workspace-grid">
+        <!-- Left Panel: Device & LUT Library -->
+        <section class="card panel-library">
+          <div class="card-header">
+            <div class="section-title">
+              <span class="step-num">1</span>
+              <h2>Select DJI Camera / Drone</h2>
+            </div>
+            <!-- Category Tabs -->
+            <div class="category-tabs" id="categoryTabs">
+              <button class="tab-btn active" data-cat="all">All</button>
+              <button class="tab-btn" data-cat="drones">Drones</button>
+              <button class="tab-btn" data-cat="action_pocket">Action & Pocket</button>
+              <button class="tab-btn" data-cat="cinema">Cinema</button>
+              <button class="tab-btn" data-cat="cinematic_looks">Looks</button>
+            </div>
+          </div>
+
+          <!-- Device Cards Carousel / Grid -->
+          <div class="device-grid" id="deviceGrid">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Selected Device's LUTs -->
+          <div class="lut-section">
+            <div class="sub-header">
+              <h3>Available 3D LUTs for <span id="currentDeviceName" class="highlight-text">Selected Device</span></h3>
+            </div>
+            <div class="lut-list" id="lutList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Look Styles -->
+          <div class="looks-section">
+            <div class="sub-header">
+              <h3>Post-LUT Look & Grade Style</h3>
+            </div>
+            <div class="look-pills" id="lookPills">
+              <div class="look-pill active" data-look="natural">
+                <span class="look-name">Natural Rec.709</span>
+                <span class="look-desc">100% DJI Baseline</span>
+              </div>
+              <div class="look-pill" data-look="vibrant">
+                <span class="look-name">Vibrant Pop</span>
+                <span class="look-desc">Punchy Sky & Greens</span>
+              </div>
+              <div class="look-pill" data-look="cinematic">
+                <span class="look-name">Cinematic Film</span>
+                <span class="look-desc">35mm Filmic Curve</span>
+              </div>
+              <div class="look-pill" data-look="golden">
+                <span class="look-name">Golden Hour</span>
+                <span class="look-desc">Warm Sunset Glow</span>
+              </div>
+              <div class="look-pill" data-look="teal_orange">
+                <span class="look-name">Teal & Orange</span>
+                <span class="look-desc">Blockbuster Contrast</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Panel: Video Input, Preview & Render -->
+        <section class="card panel-render">
+          <!-- Step 2: Input Videos -->
+          <div class="card-header">
+            <div class="section-title">
+              <span class="step-num">2</span>
+              <h2>Source Video Footage</h2>
+            </div>
+          </div>
+
+          <div class="scan-bar">
+            <input type="text" id="inputPath" placeholder="Enter file or folder path (e.g. D:\dji or /mnt/d/dji)..." value="D:\dji" />
+            <button id="btnScan" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              Scan Folder
+            </button>
+          </div>
+
+          <!-- Video Clips Table / List -->
+          <div class="clips-container" id="clipsContainer">
+            <div class="empty-state" id="emptyState">
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.4">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              <p>Scan a folder or enter a video clip path to start.</p>
+              <span class="hint">Supports 10-bit D-Log, D-Log M, MP4, MOV, MKV</span>
+            </div>
+            <div class="clips-list" id="clipsList" style="display: none;"></div>
+          </div>
+
+          <!-- Step 3: Before / After Split Preview -->
+          <div class="preview-card" id="previewCard">
+            <div class="preview-header">
+              <div class="sub-header">
+                <h3>Before / After Comparison</h3>
+              </div>
+              <button id="btnGeneratePreview" class="btn btn-sm btn-outline">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                Generate Preview Snapshot
+              </button>
+            </div>
+            <div class="preview-display" id="previewDisplay">
+              <div class="preview-placeholder">
+                <p>Click "Generate Preview Snapshot" to view side-by-side color grade.</p>
+              </div>
+              <img id="previewImg" src="" alt="LUT Preview" style="display: none;" />
+            </div>
+          </div>
+
+          <!-- Step 4: Render Settings & Action -->
+          <div class="settings-box">
+            <div class="settings-row">
+              <div class="setting-item">
+                <label>Encoder Codec</label>
+                <select id="selectCodec">
+                  <option value="hevc" selected>HEVC / H.265 (10-Bit NVENC)</option>
+                  <option value="h264">H.264 (8/10-Bit NVENC)</option>
+                  <option value="prores">Apple ProRes 422 HQ (Mastering)</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <label>Resolution</label>
+                <select id="selectScale">
+                  <option value="keep" selected>Keep Source (Up to 4K / 60fps)</option>
+                  <option value="4k">Scale to 4K UHD (3840x2160)</option>
+                  <option value="2.7k">Scale to 2.7K (2704x1520)</option>
+                  <option value="1080p">Scale to 1080p Proxy (Quick Share)</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <label>Quality Factor (CQ <span id="cqVal">19</span>)</label>
+                <input type="range" id="cqRange" min="15" max="28" value="19" />
+              </div>
+              <div class="setting-item checkbox-item">
+                <label class="switch-label">
+                  <input type="checkbox" id="chkSharpen" checked />
+                  <span>Subtle Foliage Unsharp</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="action-row">
+              <button id="btnStartGrade" class="btn btn-primary btn-large">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Apply LUT & Grade Selected Video
+              </button>
+            </div>
+
+            <!-- Real-time Progress Monitor -->
+            <div class="progress-panel" id="progressPanel" style="display: none;">
+              <div class="progress-meta">
+                <span id="progVideoName" class="prog-video">Grading...</span>
+                <span id="progSpeed" class="prog-speed">0.0x (0 fps)</span>
+                <span id="progEta" class="prog-eta">ETA: --:--</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progFill" style="width: 0%;"></div>
+              </div>
+              <div class="progress-percent" id="progPercent">0.0%</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
