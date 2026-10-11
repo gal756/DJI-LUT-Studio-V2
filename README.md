@@ -49,25 +49,25 @@
 
 ## 🚀 How to Use on Windows
 
-### Option 1: Native Windows Desktop GUI (Recommended)
-1. Double-click **`DJI_LUT_Studio.bat`** on your Desktop.
-2. Select **`[1] Native Windows Desktop GUI`** (or press Enter).
-3. A sleek desktop window will open:
+### Option 1: Native Windows Executable (`DJI_LUT_Studio.exe`) (Recommended)
+1. Go to your Windows **Desktop**.
+2. Double-click **`DJI_LUT_Studio.exe`**!
+3. The native Windows desktop application will open:
    - Select your DJI Drone/Camera model from the dropdown.
    - Choose your preferred 3D LUT and post-LUT look style.
-   - Drag and drop your video file or browse for a folder.
-   - Click **`🚀 APPLY LUT & START GRADING`**.
-   - Watch the live progress bar and click **Open Output Folder** when complete!
+   - Drag and drop your video file (or browse for a clip/folder).
+   - Click **`🚀 APPLY LUT & GRADE`**.
+   - Watch the real-time progress bar, inspect the side-by-side preview, and click **📁 Open Folder** when complete!
 
-### Option 2: Modern Web Studio GUI
+### Option 2: Drag & Drop directly onto `DJI_LUT_Studio.exe`
+- Select any DJI `.MP4` or `.MOV` video on your computer or SD card.
+- Drag and drop it directly onto the **`DJI_LUT_Studio.exe`** icon on your Desktop!
+- It will automatically launch with the video pre-loaded and auto-detect your camera model.
+
+### Option 3: Modern Web Studio GUI
 1. Double-click **`DJI_LUT_Web_Studio.bat`** on your Desktop.
 2. Your browser will automatically launch at `http://localhost:8080`.
 3. Pick your drone from the visual device cards, select a LUT, scan your clips, view instant side-by-side previews, and click **Apply LUT & Grade**.
-
-### Option 3: Instant Drag & Drop
-1. Select one or more `.MP4` or `.MOV` DJI clips from your SD card or hard drive.
-2. Drag and drop them directly onto the **`DJI_LUT_Studio.bat`** icon on your Desktop.
-3. Choose your look preset (1-5), and the NVIDIA RTX encoder will process them immediately!
 
 ### Option 4: Linux / WSL Terminal CLI
 ```bash
