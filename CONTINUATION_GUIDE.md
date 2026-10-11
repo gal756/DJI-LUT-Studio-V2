@@ -161,17 +161,49 @@ powershell.exe -NoProfile -Command "Get-Process DJI_LUT_Studio -ErrorAction Sile
 
 ---
 
-## 📋 Roadmap & Potential Future Tasks
+## 🎯 NEXT SESSION PRIORITY: Standalone Windows Distribution (Zero-WSL) & Multi-GPU Support
 
-When resuming work, here are the recommended next enhancement areas:
+The primary focus for the next session is to package **DJI LUT Studio** so that **any Windows user can download and use it immediately with zero prerequisites** (no WSL, no Python, no terminal needed).
 
-1. **Multi-File Batch Queue Progress**:
-   - Currently, selecting multiple files grades them sequentially. Adding an itemized queue list in the UI with individual progress percentages would improve clarity.
-2. **Interactive Preview Comparison Slider**:
-   - Add a draggable split-view divider slider directly on the UI preview pane so users can slide between original D-Log and graded Rec.709 interactively.
-3. **Pure Windows Standalone Build (Optional)**:
-   - For users without WSL installed, compile a standalone Windows build with embedded Python/PyInstaller + bundled Windows `ffmpeg.exe`.
-4. **Audio Track Preservation Settings**:
-   - Add a checkbox to preserve multi-track DJI Mic wireless receiver audio streams (`-c:a copy` or individual stream mapping).
-5. **Custom LUT Import Button in UI**:
-   - Add an "Import External LUT (.cube)" file picker button that copies user LUTs into `lut_library/custom/` and refreshes the manifest dynamically.
+### 1. Zero-Dependency Standalone Architecture
+
+```mermaid
+flowchart TD
+    SetupExe["DJI_LUT_Studio_Setup.exe\n(1-Click Inno Setup Installer)"] --> InstallDir["C:\\Program Files\\DJI LUT Studio\\"]
+    InstallDir --> AppExe["DJI_LUT_Studio.exe (Native C# WPF)"]
+    InstallDir --> FFmpeg["ffmpeg.exe (Windows Static with NVENC + AMF + QSV)"]
+    InstallDir --> LUTs["lut_library/ (49 Official 3D LUTs)"]
+    InstallDir --> Manifest["lut_manifest.json"]
+
+    AppExe -->|Probes Hardware on Launch| HardwareDetector{"GPU Detection"}
+    HardwareDetector -->|NVIDIA GPU| NVENC["hevc_nvenc (10-bit)"]
+    HardwareDetector -->|AMD Radeon GPU| AMF["hevc_amf (10-bit)"]
+    HardwareDetector -->|Intel Arc / Core CPU| QSV["hevc_qsv (10-bit)"]
+    HardwareDetector -->|No Supported GPU| CPU["libx265 / libx264 (Multi-core CPU)"]
+```
+
+### 2. Multi-GPU Hardware Acceleration Plan
+
+| GPU Hardware | Encoder Filter | FFmpeg Codec Flag | Status & Capability |
+|---|---|---|---|
+| **NVIDIA GeForce / RTX** | NVENC | `-c:v hevc_nvenc` | Ultra-fast 10-bit hardware encode (tested on RTX 3070). |
+| **AMD Radeon RX / APU** | AMD AMF | `-c:v hevc_amf` | Native AMD VCN hardware 10-bit encode. |
+| **Intel Arc / Core i5/i7/i9** | Intel QuickSync | `-c:v hevc_qsv` | Hardware accelerated QuickSync encoding. |
+| **Universal Fallback (Any PC)** | Software CPU | `-c:v libx265` | 100% compatible on every PC, pristine quality. |
+
+### 3. Open-Source & Legal Compliance
+- **Your Code:** MIT License (Permissive).
+- **FFmpeg (`ffmpeg.exe`):** GPL v3 / LGPL v2.1. Called as an external standalone sub-process CLI. Attribution and link to ffmpeg.org included in the About box and LICENSE.
+- **Inno Setup:** Open-source installer engine (free for commercial and non-commercial use).
+- **DJI 3D LUTs:** Publicly provided by SZ DJI Technology Co., Ltd. for creator color grading compatibility. Proper trademark attribution included.
+
+### 4. Step-by-Step Execution Plan for Next Session:
+1. **Download/Bundle Static Windows `ffmpeg.exe`**: Place `ffmpeg.exe` (with NVENC, AMF, QSV) into the release package.
+2. **Port CLI Invocation in `DJI_LUT_Studio.cs`**:
+   - Check if local `ffmpeg.exe` exists in the application directory.
+   - If present, run `ffmpeg.exe` directly natively on Windows (no `wsl.exe` required).
+   - Add the multi-GPU probe (try `hevc_nvenc` -> `hevc_amf` -> `hevc_qsv` -> `libx265`).
+3. **Build `installer/setup.iss` (Inno Setup Script)**:
+   - Packages `DJI_LUT_Studio.exe`, `ffmpeg.exe`, `lut_manifest.json`, and `lut_library/`.
+   - Generates `DJI_LUT_Studio_Setup.exe` (installer) and `DJI_LUT_Studio_Portable.zip`.
+4. **Test on Windows**: Run the standalone installer, verify that AMD/NVIDIA/Intel and CPU grading work out-of-the-box.
