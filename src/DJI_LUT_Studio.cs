@@ -906,12 +906,13 @@ namespace DJILutStudio
                     string outPrev = Path.Combine(outDir, Path.GetFileNameWithoutExtension(inputPath) + "_preview.jpg");
 
                     string script = string.Format(
+                        "import sys; sys.path.insert(0, '{0}'); " +
                         "from dji_lut_studio.manifest import manifest; " +
                         "from dji_lut_studio.engine import generate_preview_snapshot; " +
                         "from pathlib import Path; " +
-                        "p_lut = manifest.resolve_lut_file('{0}'); " +
-                        "generate_preview_snapshot(Path('{1}'), p_lut, Path('{2}'), look_style='{3}', sharpen=True)",
-                        lutId, inputPath.Replace("\\", "/"), outPrev.Replace("\\", "/"), look
+                        "p_lut = manifest.resolve_lut_file('{1}'); " +
+                        "generate_preview_snapshot(Path('{2}'), p_lut, Path('{3}'), look_style='{4}', sharpen=True)",
+                        appDir, lutId, inputPath.Replace("\\", "/"), outPrev.Replace("\\", "/"), look
                     );
 
                     ProcessStartInfo psi = new ProcessStartInfo

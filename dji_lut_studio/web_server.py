@@ -14,14 +14,28 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Dict, Any, List
 
-from .manifest import manifest
-from .engine import (
-    grade_video,
-    get_video_info,
-    check_nvenc_available,
-    generate_preview_snapshot,
-    VIDEO_EXTENSIONS,
-)
+_pkg_root = str(Path(__file__).resolve().parent.parent)
+if _pkg_root not in sys.path:
+    sys.path.insert(0, _pkg_root)
+
+try:
+    from .manifest import manifest
+    from .engine import (
+        grade_video,
+        get_video_info,
+        check_nvenc_available,
+        generate_preview_snapshot,
+        VIDEO_EXTENSIONS,
+    )
+except (ImportError, ValueError):
+    from dji_lut_studio.manifest import manifest
+    from dji_lut_studio.engine import (
+        grade_video,
+        get_video_info,
+        check_nvenc_available,
+        generate_preview_snapshot,
+        VIDEO_EXTENSIONS,
+    )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "web"

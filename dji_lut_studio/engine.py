@@ -13,7 +13,14 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Callable, Any, Tuple
 
-from .manifest import manifest
+_pkg_root = str(Path(__file__).resolve().parent.parent)
+if _pkg_root not in sys.path:
+    sys.path.insert(0, _pkg_root)
+
+try:
+    from .manifest import manifest
+except (ImportError, ValueError):
+    from dji_lut_studio.manifest import manifest
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".m4v"}
 

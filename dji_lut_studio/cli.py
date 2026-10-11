@@ -10,14 +10,29 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
-from .manifest import manifest
-from .engine import (
-    grade_video,
-    get_video_info,
-    check_nvenc_available,
-    format_seconds,
-    VIDEO_EXTENSIONS,
-)
+# Ensure package root is in sys.path
+_pkg_root = str(Path(__file__).resolve().parent.parent)
+if _pkg_root not in sys.path:
+    sys.path.insert(0, _pkg_root)
+
+try:
+    from .manifest import manifest
+    from .engine import (
+        grade_video,
+        get_video_info,
+        check_nvenc_available,
+        format_seconds,
+        VIDEO_EXTENSIONS,
+    )
+except (ImportError, ValueError):
+    from dji_lut_studio.manifest import manifest
+    from dji_lut_studio.engine import (
+        grade_video,
+        get_video_info,
+        check_nvenc_available,
+        format_seconds,
+        VIDEO_EXTENSIONS,
+    )
 
 GREEN = "\033[92m"
 CYAN = "\033[96m"
