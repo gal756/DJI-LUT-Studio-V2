@@ -1,59 +1,51 @@
 using System;
 using System.IO;
 using System.Diagnostics;
-using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Markup;
 using System.Collections.Generic;
 
 namespace DJILutStudio
 {
-    public class MainForm : Form
+    public class Program
     {
-        // Dark Theme Colors
-        private static readonly Color BgDark = Color.FromArgb(14, 17, 23);
-        private static readonly Color BgCard = Color.FromArgb(22, 27, 34);
-        private static readonly Color BgInput = Color.FromArgb(18, 22, 31);
-        private static readonly Color BorderColor = Color.FromArgb(48, 54, 61);
-        private static readonly Color TextMain = Color.FromArgb(240, 246, 252);
-        private static readonly Color TextMuted = Color.FromArgb(139, 148, 158);
-        private static readonly Color AccentCyan = Color.FromArgb(0, 210, 255);
-        private static readonly Color AccentGreen = Color.FromArgb(0, 242, 169);
-        private static readonly Color AccentGold = Color.FromArgb(255, 170, 0);
+        private static string wslDistro = "Ubuntu-26.04";
+        private static string appDir = @"/home/gal756/LUT-adder";
 
-        // Controls
-        private TextBox txtInputPath;
-        private Button btnBrowseFile;
-        private Button btnBrowseFolder;
-        private ComboBox cmbDevice;
-        private ComboBox cmbLut;
-        private ComboBox cmbLook;
-        private ComboBox cmbCodec;
-        private ComboBox cmbScale;
-        private TrackBar tbCq;
-        private Label lblCqVal;
-        private CheckBox chkSharpen;
-        private CheckBox chkPreview;
-        private Button btnStartGrade;
-        private Button btnOpenFolder;
-        private Button btnWatcher;
-        private Button btnGenPreview;
-        private ProgressBar progressBar;
-        private Label lblStatus;
-        private Label lblSpeedEta;
-        private RichTextBox txtLog;
-        private PictureBox picPreview;
-        private Label lblPreviewPlaceholder;
+        private static Window mainWindow;
+        private static TextBox txtInputPath;
+        private static Button btnBrowseFile;
+        private static Button btnBrowseFolder;
+        private static ComboBox cmbDevice;
+        private static ComboBox cmbLut;
+        private static ComboBox cmbLook;
+        private static ComboBox cmbCodec;
+        private static ComboBox cmbScale;
+        private static Slider sliderCq;
+        private static TextBlock lblCqVal;
+        private static CheckBox chkSharpen;
+        private static CheckBox chkPreview;
+        private static Button btnStartGrade;
+        private static Button btnOpenFolder;
+        private static Button btnWatcher;
+        private static Button btnGenPreview;
+        private static ProgressBar progressBar;
+        private static TextBlock lblStatus;
+        private static TextBlock lblSpeedEta;
+        private static TextBox txtLog;
+        private static Image imgPreview;
+        private static TextBlock lblPreviewPlaceholder;
+        private static Border borderPreview;
 
-        // Process tracking
-        private Process activeProcess = null;
-        private Thread workerThread = null;
-        private string wslDistro = "Ubuntu-26.04";
-        private string appDir = @"/home/gal756/LUT-adder";
+        private static Process activeProcess = null;
+        private static Thread workerThread = null;
 
-        // Device and LUT database
-        private Dictionary<string, List<LutEntry>> deviceDatabase;
+        private static Dictionary<string, List<LutEntry>> deviceDatabase;
 
         public class LutEntry
         {
@@ -69,360 +61,589 @@ namespace DJILutStudio
             public override string ToString() { return DisplayName + (IsRecommended ? " ★ [Recommended]" : ""); }
         }
 
-        public MainForm(string initialPath = null)
+        [STAThread]
+        public static void Main(string[] args)
         {
-            InitializeComponent();
-            InitDatabase();
-            if (!string.IsNullOrEmpty(initialPath))
+            try
             {
-                txtInputPath.Text = initialPath.Trim('"');
-                AutoSelectDeviceForPath(initialPath);
+                var app = new Application();
+                string initialFile = (args != null && args.Length > 0) ? args[0] : null;
+                CreateAndShowUI(initialFile);
+                app.Run(mainWindow);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fatal Error: " + ex.ToString(), "DJI LUT Studio");
             }
         }
 
-        private void InitializeComponent()
+        private static void CreateAndShowUI(string initialFile)
         {
-            this.Text = "DJI LUT Studio - Open Source Video Color Grading Suite";
-            this.Size = new Size(1000, 780);
-            this.MinimumSize = new Size(950, 720);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = BgDark;
-            this.ForeColor = TextMain;
-            this.Font = new Font("Segoe UI", 9.25f, FontStyle.Regular);
-            this.AllowDrop = true;
-            this.DragEnter += MainForm_DragEnter;
-            this.DragDrop += MainForm_DragDrop;
+            InitDatabase();
 
-            // Top Header Panel
-            Panel pnlHeader = new Panel
+            string xaml = @"
+<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+        Title='DJI LUT Studio - Universal Video Color Grading Suite'
+        Height='760' Width='980' MinHeight='700' MinWidth='920'
+        WindowStartupLocation='CenterScreen'
+        Background='#0D1117' Foreground='#F0F6FC' FontFamily='Segoe UI'
+        AllowDrop='True'>
+
+    <Window.Resources>
+        <!-- Modern ScrollViewer Style -->
+        <Style TargetType='{x:Type ScrollBar}'>
+            <Setter Property='Background' Value='#0D1117'/>
+            <Setter Property='Foreground' Value='#30363D'/>
+        </Style>
+
+        <!-- Dark TextBox Style -->
+        <Style TargetType='{x:Type TextBox}'>
+            <Setter Property='Background' Value='#161B22'/>
+            <Setter Property='Foreground' Value='#F0F6FC'/>
+            <Setter Property='BorderBrush' Value='#30363D'/>
+            <Setter Property='BorderThickness' Value='1'/>
+            <Setter Property='Padding' Value='10,6'/>
+            <Setter Property='FontSize' Value='13'/>
+            <Setter Property='VerticalContentAlignment' Value='Center'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type TextBox}'>
+                        <Border Name='Bd' Background='{TemplateBinding Background}'
+                                BorderBrush='{TemplateBinding BorderBrush}'
+                                BorderThickness='{TemplateBinding BorderThickness}'
+                                CornerRadius='6'>
+                            <ScrollViewer Name='PART_ContentHost' VerticalAlignment='Center'/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsFocused' Value='True'>
+                                <Setter TargetName='Bd' Property='BorderBrush' Value='#00D2FF'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Standard Button Style -->
+        <Style x:Key='SubButton' TargetType='{x:Type Button}'>
+            <Setter Property='Background' Value='#21262D'/>
+            <Setter Property='Foreground' Value='#F0F6FC'/>
+            <Setter Property='BorderBrush' Value='#30363D'/>
+            <Setter Property='BorderThickness' Value='1'/>
+            <Setter Property='FontSize' Value='12.5'/>
+            <Setter Property='FontWeight' Value='SemiBold'/>
+            <Setter Property='Cursor' Value='Hand'/>
+            <Setter Property='Padding' Value='12,6'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type Button}'>
+                        <Border Name='Bd' Background='{TemplateBinding Background}'
+                                BorderBrush='{TemplateBinding BorderBrush}'
+                                BorderThickness='{TemplateBinding BorderThickness}'
+                                CornerRadius='6'>
+                            <ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsMouseOver' Value='True'>
+                                <Setter TargetName='Bd' Property='Background' Value='#30363D'/>
+                                <Setter TargetName='Bd' Property='BorderBrush' Value='#8B949E'/>
+                            </Trigger>
+                            <Trigger Property='IsPressed' Value='True'>
+                                <Setter TargetName='Bd' Property='Background' Value='#161B22'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary Action Button -->
+        <Style x:Key='PrimaryActionBtn' TargetType='{x:Type Button}'>
+            <Setter Property='Background' Value='#00D2FF'/>
+            <Setter Property='Foreground' Value='#0D1117'/>
+            <Setter Property='FontSize' Value='13.5'/>
+            <Setter Property='FontWeight' Value='Bold'/>
+            <Setter Property='Cursor' Value='Hand'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type Button}'>
+                        <Border Name='Bd' Background='{TemplateBinding Background}' CornerRadius='6'>
+                            <ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsMouseOver' Value='True'>
+                                <Setter TargetName='Bd' Property='Background' Value='#33DCFF'/>
+                            </Trigger>
+                            <Trigger Property='IsPressed' Value='True'>
+                                <Setter TargetName='Bd' Property='Background' Value='#00B4DB'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ComboBox ToggleButton -->
+        <ControlTemplate x:Key='ComboBoxToggleButton' TargetType='{x:Type ToggleButton}'>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width='28' />
+                </Grid.ColumnDefinitions>
+                <Border x:Name='Border' Grid.ColumnSpan='2' CornerRadius='6'
+                        Background='#161B22' BorderBrush='#30363D' BorderThickness='1' />
+                <Path x:Name='Arrow' Grid.Column='1' HorizontalAlignment='Center' VerticalAlignment='Center'
+                      Data='M 0 0 L 4 4 L 8 0 Z' Fill='#8B949E' />
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property='IsMouseOver' Value='true'>
+                    <Setter TargetName='Border' Property='BorderBrush' Value='#00D2FF' />
+                    <Setter TargetName='Arrow' Property='Fill' Value='#00D2FF' />
+                </Trigger>
+                <Trigger Property='IsChecked' Value='true'>
+                    <Setter TargetName='Border' Property='BorderBrush' Value='#00D2FF' />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- Modern ComboBoxItem Style -->
+        <Style TargetType='{x:Type ComboBoxItem}'>
+            <Setter Property='SnapsToDevicePixels' Value='true'/>
+            <Setter Property='OverridesDefaultStyle' Value='true'/>
+            <Setter Property='Height' Value='30'/>
+            <Setter Property='Foreground' Value='#F0F6FC'/>
+            <Setter Property='FontSize' Value='12.5'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type ComboBoxItem}'>
+                        <Border Name='Border' Padding='10,4' CornerRadius='4' Margin='2,1'
+                                Background='Transparent' SnapsToDevicePixels='true'>
+                            <ContentPresenter VerticalAlignment='Center' />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsHighlighted' Value='true'>
+                                <Setter TargetName='Border' Property='Background' Value='#1F3A4B'/>
+                            </Trigger>
+                            <Trigger Property='IsSelected' Value='true'>
+                                <Setter TargetName='Border' Property='Background' Value='#00D2FF'/>
+                                <Setter Property='Foreground' Value='#0D1117'/>
+                                <Setter Property='FontWeight' Value='Bold'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern ComboBox Style -->
+        <Style TargetType='{x:Type ComboBox}'>
+            <Setter Property='SnapsToDevicePixels' Value='true'/>
+            <Setter Property='OverridesDefaultStyle' Value='true'/>
+            <Setter Property='ScrollViewer.HorizontalScrollBarVisibility' Value='Auto'/>
+            <Setter Property='ScrollViewer.VerticalScrollBarVisibility' Value='Auto'/>
+            <Setter Property='ScrollViewer.CanContentScroll' Value='true'/>
+            <Setter Property='Height' Value='34'/>
+            <Setter Property='Foreground' Value='#F0F6FC'/>
+            <Setter Property='FontSize' Value='12.5'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type ComboBox}'>
+                        <Grid>
+                            <ToggleButton Name='ToggleButton' Template='{StaticResource ComboBoxToggleButton}'
+                                          Focusable='false'
+                                          IsChecked='{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}'
+                                          ClickMode='Press'/>
+                            <ContentPresenter Name='ContentSite' IsHitTestVisible='False'
+                                              Content='{TemplateBinding SelectionBoxItem}'
+                                              ContentTemplate='{TemplateBinding SelectionBoxItemTemplate}'
+                                              ContentTemplateSelector='{TemplateBinding ItemTemplateSelector}'
+                                              Margin='12,3,30,3' VerticalAlignment='Center' HorizontalAlignment='Left' />
+                            <Popup Name='Popup' Placement='Bottom' IsOpen='{TemplateBinding IsDropDownOpen}'
+                                   AllowsTransparency='True' Focusable='False' PopupAnimation='Slide'>
+                                <Grid Name='DropDown' SnapsToDevicePixels='True'
+                                      MinWidth='{TemplateBinding ActualWidth}' MaxHeight='{TemplateBinding MaxDropDownHeight}'>
+                                    <Border Name='DropDownBorder' Background='#161B22' BorderThickness='1'
+                                            BorderBrush='#30363D' CornerRadius='6' Margin='0,2,0,0'>
+                                        <ScrollViewer Margin='4,6' SnapsToDevicePixels='True'>
+                                            <StackPanel IsItemsHost='True' KeyboardNavigation.DirectionalNavigation='Circular' />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern CheckBox Style -->
+        <Style TargetType='{x:Type CheckBox}'>
+            <Setter Property='Foreground' Value='#F0F6FC'/>
+            <Setter Property='FontSize' Value='12.5'/>
+            <Setter Property='Cursor' Value='Hand'/>
+        </Style>
+
+        <!-- Modern Slider Style -->
+        <Style TargetType='{x:Type Slider}'>
+            <Setter Property='SnapsToDevicePixels' Value='true'/>
+            <Setter Property='OverridesDefaultStyle' Value='true'/>
+            <Setter Property='Focusable' Value='false'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='{x:Type Slider}'>
+                        <Grid VerticalAlignment='Center'>
+                            <Border Height='4' Background='#30363D' CornerRadius='2'/>
+                            <Track Name='PART_Track'>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType='{x:Type Thumb}'>
+                                                <Ellipse Width='14' Height='14' Fill='#00D2FF' Stroke='#0D1117' StrokeThickness='2' Cursor='Hand'/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height='56'/>
+            <RowDefinition Height='*'/>
+            <RowDefinition Height='68'/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Header Bar -->
+        <Border Grid.Row='0' Background='#161B22' BorderBrush='#30363D' BorderThickness='0,0,0,1' Padding='20,0'>
+            <DockPanel LastChildFill='False'>
+                <StackPanel Orientation='Horizontal' VerticalAlignment='Center'>
+                    <TextBlock Text='🎬 DJI LUT STUDIO' FontSize='16' FontWeight='Bold' Foreground='#00D2FF' VerticalAlignment='Center'/>
+                    <Border Background='#1F3A4B' CornerRadius='4' Padding='6,2' Margin='12,0,0,0' VerticalAlignment='Center'>
+                        <TextBlock Text='v2.0.0 PRO' FontSize='10.5' FontWeight='Bold' Foreground='#00D2FF'/>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Orientation='Horizontal' DockPanel.Dock='Right' VerticalAlignment='Center'>
+                    <Border Background='#1A3328' BorderBrush='#00F2A9' BorderThickness='1' CornerRadius='12' Padding='10,4' Margin='0,0,10,0'>
+                        <StackPanel Orientation='Horizontal'>
+                            <Ellipse Width='7' Height='7' Fill='#00F2A9' Margin='0,0,6,0' VerticalAlignment='Center'/>
+                            <TextBlock Text='NVIDIA RTX 3070 (10-Bit Active)' FontSize='11' FontWeight='SemiBold' Foreground='#00F2A9'/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background='#21262D' BorderBrush='#30363D' BorderThickness='1' CornerRadius='12' Padding='8,4'>
+                        <TextBlock Text='49 3D LUTs Loaded' FontSize='11' Foreground='#8B949E'/>
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Workspace (No Scroll, Grid Structured) -->
+        <Grid Grid.Row='1' Margin='20,12,20,10'>
+            <Grid.RowDefinitions>
+                <RowDefinition Height='Auto'/>
+                <RowDefinition Height='Auto'/>
+                <RowDefinition Height='Auto'/>
+                <RowDefinition Height='*'/>
+            </Grid.RowDefinitions>
+
+            <!-- Card 1: Input Footage -->
+            <Border Grid.Row='0' Background='#161B22' BorderBrush='#30363D' BorderThickness='1' CornerRadius='8' Padding='14,10' Margin='0,0,0,10'>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height='Auto'/>
+                        <RowDefinition Height='Auto'/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation='Horizontal' Margin='0,0,0,6'>
+                        <Border Background='#00D2FF' CornerRadius='3' Width='16' Height='16' Margin='0,0,6,0'>
+                            <TextBlock Text='1' FontSize='10' FontWeight='Bold' Foreground='#0D1117' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <TextBlock Text='INPUT FOOTAGE (DRAG &amp; DROP FILE OR DIRECTORY)' FontSize='11.5' FontWeight='Bold' Foreground='#8B949E'/>
+                    </StackPanel>
+                    <Grid Grid.Row='1'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='*'/>
+                            <ColumnDefinition Width='Auto'/>
+                            <ColumnDefinition Width='Auto'/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Name='TxtInputPath' Grid.Column='0' Text='D:\dji'/>
+                        <Button Name='BtnBrowseFile' Grid.Column='1' Content='Browse Clip...' Style='{StaticResource SubButton}' Margin='8,0,0,0' Height='34' Padding='12,0'/>
+                        <Button Name='BtnBrowseFolder' Grid.Column='2' Content='Browse Folder...' Style='{StaticResource SubButton}' Margin='8,0,0,0' Height='34' Padding='12,0'/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Card 2: Camera & LUT Selection -->
+            <Border Grid.Row='1' Background='#161B22' BorderBrush='#30363D' BorderThickness='1' CornerRadius='8' Padding='14,10' Margin='0,0,0,10'>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height='Auto'/>
+                        <RowDefinition Height='Auto'/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation='Horizontal' Margin='0,0,0,6'>
+                        <Border Background='#00D2FF' CornerRadius='3' Width='16' Height='16' Margin='0,0,6,0'>
+                            <TextBlock Text='2' FontSize='10' FontWeight='Bold' Foreground='#0D1117' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <TextBlock Text='CAMERA MODEL &amp; 3D CONVERSION LUT' FontSize='11.5' FontWeight='Bold' Foreground='#8B949E'/>
+                    </StackPanel>
+                    <Grid Grid.Row='1'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='1*'/>
+                            <ColumnDefinition Width='14'/>
+                            <ColumnDefinition Width='1*'/>
+                            <ColumnDefinition Width='Auto'/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column='0'>
+                            <TextBlock Text='DJI Camera / Drone Model:' FontSize='11' Foreground='#8B949E' Margin='0,0,0,4'/>
+                            <ComboBox Name='CmbDevice'/>
+                        </StackPanel>
+                        <StackPanel Grid.Column='2'>
+                            <TextBlock Text='3D Conversion LUT (D-Log / D-Log M to Rec.709):' FontSize='11' Foreground='#8B949E' Margin='0,0,0,4'/>
+                            <ComboBox Name='CmbLut'/>
+                        </StackPanel>
+                        <Button Name='BtnCustomLut' Grid.Column='3' Content='Custom...' Style='{StaticResource SubButton}' Margin='8,18,0,0' Height='34' Padding='10,0'/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Card 3: Look Style & Settings -->
+            <Border Grid.Row='2' Background='#161B22' BorderBrush='#30363D' BorderThickness='1' CornerRadius='8' Padding='14,10' Margin='0,0,0,10'>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height='Auto'/>
+                        <RowDefinition Height='Auto'/>
+                        <RowDefinition Height='Auto'/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation='Horizontal' Margin='0,0,0,6'>
+                        <Border Background='#00D2FF' CornerRadius='3' Width='16' Height='16' Margin='0,0,6,0'>
+                            <TextBlock Text='3' FontSize='10' FontWeight='Bold' Foreground='#0D1117' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <TextBlock Text='GRADING STYLE &amp; ENCODER SETTINGS' FontSize='11.5' FontWeight='Bold' Foreground='#8B949E'/>
+                    </StackPanel>
+                    <Grid Grid.Row='1'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='1.2*'/>
+                            <ColumnDefinition Width='12'/>
+                            <ColumnDefinition Width='1*'/>
+                            <ColumnDefinition Width='12'/>
+                            <ColumnDefinition Width='1*'/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column='0'>
+                            <TextBlock Text='Post-LUT Look Preset:' FontSize='11' Foreground='#8B949E' Margin='0,0,0,4'/>
+                            <ComboBox Name='CmbLook'/>
+                        </StackPanel>
+                        <StackPanel Grid.Column='2'>
+                            <TextBlock Text='Encoder Codec:' FontSize='11' Foreground='#8B949E' Margin='0,0,0,4'/>
+                            <ComboBox Name='CmbCodec'/>
+                        </StackPanel>
+                        <StackPanel Grid.Column='4'>
+                            <TextBlock Text='Output Resolution:' FontSize='11' Foreground='#8B949E' Margin='0,0,0,4'/>
+                            <ComboBox Name='CmbScale'/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Row='2' Margin='0,10,0,0'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='Auto'/>
+                            <ColumnDefinition Width='160'/>
+                            <ColumnDefinition Width='60'/>
+                            <ColumnDefinition Width='*'/>
+                            <ColumnDefinition Width='Auto'/>
+                            <ColumnDefinition Width='20'/>
+                            <ColumnDefinition Width='Auto'/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column='0' Text='Quality (CQ):' FontSize='11.5' Foreground='#8B949E' VerticalAlignment='Center' Margin='0,0,8,0'/>
+                        <Slider Name='SliderCq' Grid.Column='1' Minimum='15' Maximum='28' Value='19' VerticalAlignment='Center'/>
+                        <TextBlock Name='LblCqVal' Grid.Column='2' Text='19 (High)' FontSize='11.5' FontWeight='Bold' Foreground='#00D2FF' VerticalAlignment='Center' Margin='8,0,0,0'/>
+                        <CheckBox Name='ChkSharpen' Grid.Column='4' Content='Apply Foliage Unsharp Mask' IsChecked='True' VerticalAlignment='Center'/>
+                        <CheckBox Name='ChkPreview' Grid.Column='6' Content='Generate Comparison JPEG' IsChecked='True' VerticalAlignment='Center'/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Card 4: Preview (Left) & Pipeline Logs (Right) -->
+            <Grid Grid.Row='3'>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width='1.1*'/>
+                    <ColumnDefinition Width='12'/>
+                    <ColumnDefinition Width='1*'/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Comparison Preview -->
+                <Border Grid.Column='0' Background='#161B22' BorderBrush='#30363D' BorderThickness='1' CornerRadius='8' Padding='12'>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height='Auto'/>
+                            <RowDefinition Height='*'/>
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin='0,0,0,6'>
+                            <TextBlock Text='BEFORE / AFTER SPLIT COMPARISON' FontSize='11.5' FontWeight='Bold' Foreground='#8B949E' VerticalAlignment='Center'/>
+                            <Button Name='BtnGenPreview' Content='Generate Snapshot' Style='{StaticResource SubButton}' DockPanel.Dock='Right' Height='26' Padding='8,0' FontSize='11'/>
+                        </DockPanel>
+                        <Border Name='BorderPreview' Grid.Row='1' Background='#06080B' BorderBrush='#21262D' BorderThickness='1' CornerRadius='6' ClipToBounds='True'>
+                            <Grid>
+                                <TextBlock Name='LblPreviewPlaceholder' Text='Click ""Generate Snapshot"" to preview color grade' Foreground='#484F58' FontSize='12' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                                <Image Name='ImgPreview' Stretch='Uniform' HorizontalAlignment='Center' VerticalAlignment='Center' Visibility='Collapsed'/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Right: Console Logs -->
+                <Border Grid.Column='2' Background='#161B22' BorderBrush='#30363D' BorderThickness='1' CornerRadius='8' Padding='12'>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height='Auto'/>
+                            <RowDefinition Height='*'/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text='PIPELINE CONSOLE' FontSize='11.5' FontWeight='Bold' Foreground='#8B949E' Margin='0,0,0,6'/>
+                        <Border Grid.Row='1' Background='#06080B' BorderBrush='#21262D' BorderThickness='1' CornerRadius='6' Padding='8'>
+                            <TextBox Name='TxtLog' Background='Transparent' BorderThickness='0' FontFamily='Consolas' FontSize='11' Foreground='#00F2A9' IsReadOnly='True' VerticalScrollBarVisibility='Auto' TextWrapping='Wrap' Text='DJI LUT Studio v2.0.0 Native Engine Ready.'/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row='2' Background='#161B22' BorderBrush='#30363D' BorderThickness='0,1,0,0' Padding='20,10'>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width='*'/>
+                    <ColumnDefinition Width='Auto'/>
+                    <ColumnDefinition Width='Auto'/>
+                    <ColumnDefinition Width='Auto'/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column='0' VerticalAlignment='Center' Margin='0,0,20,0'>
+                    <ProgressBar Name='ProgressBar' Height='10' Minimum='0' Maximum='100' Value='0' Background='#21262D' Foreground='#00D2FF'/>
+                    <Grid Margin='0,4,0,0'>
+                        <TextBlock Name='LblStatus' Text='Ready to grade.' FontSize='11.5' Foreground='#8B949E'/>
+                        <TextBlock Name='LblSpeedEta' Text='' FontSize='11' FontWeight='Bold' Foreground='#00D2FF' HorizontalAlignment='Right'/>
+                    </Grid>
+                </StackPanel>
+
+                <Button Name='BtnWatcher' Grid.Column='1' Content='⏱ Watcher Mode' Style='{StaticResource SubButton}' Height='42' Padding='14,0' Margin='0,0,10,0'/>
+                <Button Name='BtnOpenFolder' Grid.Column='2' Content='📁 Open Folder' Style='{StaticResource SubButton}' Height='42' Padding='14,0' Margin='0,0,12,0'/>
+                <Button Name='BtnStartGrade' Grid.Column='3' Content='🚀 APPLY LUT &amp; GRADE' Style='{StaticResource PrimaryActionBtn}' Height='42' Padding='22,0'/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>";
+
+            mainWindow = (Window)XamlReader.Parse(xaml);
+
+            // Wire up controls
+            txtInputPath = (TextBox)mainWindow.FindName("TxtInputPath");
+            btnBrowseFile = (Button)mainWindow.FindName("BtnBrowseFile");
+            btnBrowseFolder = (Button)mainWindow.FindName("BtnBrowseFolder");
+            cmbDevice = (ComboBox)mainWindow.FindName("CmbDevice");
+            cmbLut = (ComboBox)mainWindow.FindName("CmbLut");
+            cmbLook = (ComboBox)mainWindow.FindName("CmbLook");
+            cmbCodec = (ComboBox)mainWindow.FindName("CmbCodec");
+            cmbScale = (ComboBox)mainWindow.FindName("CmbScale");
+            sliderCq = (Slider)mainWindow.FindName("SliderCq");
+            lblCqVal = (TextBlock)mainWindow.FindName("LblCqVal");
+            chkSharpen = (CheckBox)mainWindow.FindName("ChkSharpen");
+            chkPreview = (CheckBox)mainWindow.FindName("ChkPreview");
+            btnStartGrade = (Button)mainWindow.FindName("BtnStartGrade");
+            btnOpenFolder = (Button)mainWindow.FindName("BtnOpenFolder");
+            btnWatcher = (Button)mainWindow.FindName("BtnWatcher");
+            btnGenPreview = (Button)mainWindow.FindName("BtnGenPreview");
+            progressBar = (ProgressBar)mainWindow.FindName("ProgressBar");
+            lblStatus = (TextBlock)mainWindow.FindName("LblStatus");
+            lblSpeedEta = (TextBlock)mainWindow.FindName("LblSpeedEta");
+            txtLog = (TextBox)mainWindow.FindName("TxtLog");
+            imgPreview = (Image)mainWindow.FindName("ImgPreview");
+            lblPreviewPlaceholder = (TextBlock)mainWindow.FindName("LblPreviewPlaceholder");
+            borderPreview = (Border)mainWindow.FindName("BorderPreview");
+
+            // Populate Dropdowns
+            foreach (var key in deviceDatabase.Keys)
             {
-                Dock = DockStyle.Top,
-                Height = 64,
-                BackColor = BgCard,
-                Padding = new Padding(20, 10, 20, 10)
+                cmbDevice.Items.Add(key);
+            }
+            cmbDevice.SelectedIndex = 0;
+            cmbDevice.SelectionChanged += (s, e) => PopulateLutsForSelectedDevice();
+            PopulateLutsForSelectedDevice();
+
+            cmbLook.Items.Add("Vibrant Pop (Recommended: Punchy Sky, Greens & Sharpness)");
+            cmbLook.Items.Add("Natural Rec.709 (100% DJI Baseline Color Reference)");
+            cmbLook.Items.Add("Cinematic Film (Filmic 35mm S-Curve, Rich Shadows)");
+            cmbLook.Items.Add("Golden Hour (Warm Amber Sunlight & Sunset Glow)");
+            cmbLook.Items.Add("Teal & Orange (Blockbuster Complementary Contrast)");
+            cmbLook.SelectedIndex = 0;
+
+            cmbCodec.Items.Add("HEVC / H.265 (10-Bit RTX NVENC Hardware)");
+            cmbCodec.Items.Add("H.264 (8/10-Bit RTX NVENC Hardware)");
+            cmbCodec.Items.Add("Apple ProRes 422 HQ (Broadcast Mastering)");
+            cmbCodec.SelectedIndex = 0;
+
+            cmbScale.Items.Add("Keep Source Resolution (Up to 4K 60fps)");
+            cmbScale.Items.Add("Scale to 4K UHD (3840x2160)");
+            cmbScale.Items.Add("Scale to 2.7K (2704x1520)");
+            cmbScale.Items.Add("Scale to 1080p Proxy (Quick Discord / WhatsApp share)");
+            cmbScale.SelectedIndex = 0;
+
+            sliderCq.ValueChanged += (s, e) => {
+                int val = (int)sliderCq.Value;
+                lblCqVal.Text = val + (val <= 19 ? " (High)" : " (Standard)");
             };
 
-            Label lblTitle = new Label
-            {
-                Text = "🎬 DJI LUT STUDIO",
-                Font = new Font("Segoe UI", 15f, FontStyle.Bold),
-                ForeColor = AccentCyan,
-                AutoSize = true,
-                Location = new Point(16, 16)
-            };
-
-            Label lblBadge = new Label
-            {
-                Text = "v2.0.0 Windows",
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
-                ForeColor = AccentCyan,
-                BackColor = Color.FromArgb(31, 58, 75),
-                Padding = new Padding(6, 2, 6, 2),
-                AutoSize = true,
-                Location = new Point(220, 20)
-            };
-
-            Label lblGpu = new Label
-            {
-                Text = "● NVIDIA RTX 3070 NVENC (10-bit Active)",
-                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
-                ForeColor = AccentGreen,
-                BackColor = Color.FromArgb(20, 45, 35),
-                Padding = new Padding(10, 4, 10, 4),
-                AutoSize = true,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(680, 18)
-            };
-
-            pnlHeader.Controls.Add(lblTitle);
-            pnlHeader.Controls.Add(lblBadge);
-            pnlHeader.Controls.Add(lblGpu);
-            this.Controls.Add(pnlHeader);
-
-            // Main Content Layout
-            Panel pnlMain = new Panel
-            {
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                Padding = new Padding(20, 15, 20, 15)
-            };
-            this.Controls.Add(pnlMain);
-
-            int curY = 10;
-
-            // === 1. Source Video Section ===
-            GroupBox grpSource = CreateSectionBox("1. SOURCE VIDEO OR FOLDER (DRAG & DROP)", 940, 80, curY);
-            pnlMain.Controls.Add(grpSource);
-
-            txtInputPath = new TextBox
-            {
-                Location = new Point(16, 32),
-                Size = new Size(680, 28),
-                BackColor = BgInput,
-                ForeColor = TextMain,
-                BorderStyle = BorderStyle.FixedSingle,
-                Text = @"D:\dji",
-                AllowDrop = true
-            };
-            txtInputPath.DragEnter += MainForm_DragEnter;
-            txtInputPath.DragDrop += MainForm_DragDrop;
-
-            btnBrowseFile = CreateButton("Browse Clip...", new Point(710, 30), new Size(105, 30), BgCard, TextMain);
-            btnBrowseFile.Click += (s, e) => {
-                OpenFileDialog dlg = new OpenFileDialog { Filter = "Video Files (*.mp4;*.mov;*.mkv)|*.mp4;*.mov;*.mkv|All Files (*.*)|*.*" };
-                if (dlg.ShowDialog() == DialogResult.OK) {
-                    txtInputPath.Text = dlg.FileName;
-                    AutoSelectDeviceForPath(dlg.FileName);
-                }
-            };
-
-            btnBrowseFolder = CreateButton("Browse Folder...", new Point(825, 30), new Size(105, 30), BgCard, TextMain);
-            btnBrowseFolder.Click += (s, e) => {
-                FolderBrowserDialog dlg = new FolderBrowserDialog();
-                if (dlg.ShowDialog() == DialogResult.OK) {
-                    txtInputPath.Text = dlg.SelectedPath;
-                }
-            };
-
-            grpSource.Controls.Add(txtInputPath);
-            grpSource.Controls.Add(btnBrowseFile);
-            grpSource.Controls.Add(btnBrowseFolder);
-            curY += 95;
-
-            // === 2. Camera Model & 3D LUT Section ===
-            GroupBox grpLut = CreateSectionBox("2. DJI CAMERA / DRONE & 3D LUT CONVERSION PROFILE", 940, 90, curY);
-            pnlMain.Controls.Add(grpLut);
-
-            Label lblDevTitle = new Label { Text = "DJI Camera / Drone Model:", Location = new Point(16, 26), AutoSize = true, ForeColor = TextMuted };
-            cmbDevice = new ComboBox { Location = new Point(16, 48), Size = new Size(380, 28), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = BgInput, ForeColor = TextMain };
-            cmbDevice.SelectedIndexChanged += (s, e) => PopulateLutsForSelectedDevice();
-
-            Label lblLutTitle = new Label { Text = "3D Conversion LUT (D-Log / D-Log M to Rec.709):", Location = new Point(420, 26), AutoSize = true, ForeColor = TextMuted };
-            cmbLut = new ComboBox { Location = new Point(420, 48), Size = new Size(400, 28), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = BgInput, ForeColor = TextMain };
-
-            Button btnCustomLut = CreateButton("Custom...", new Point(830, 47), new Size(95, 29), BgCard, TextMain);
+            // Custom LUT Button
+            Button btnCustomLut = (Button)mainWindow.FindName("BtnCustomLut");
             btnCustomLut.Click += (s, e) => {
-                OpenFileDialog dlg = new OpenFileDialog { Filter = "3D LUT Files (*.cube)|*.cube|All Files (*.*)|*.*" };
-                if (dlg.ShowDialog() == DialogResult.OK) {
+                var dlg = new System.Windows.Forms.OpenFileDialog { Filter = "3D LUT Files (*.cube)|*.cube|All Files (*.*)|*.*" };
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
                     cmbLut.Items.Add(new LutEntry(dlg.FileName, "Custom: " + Path.GetFileName(dlg.FileName), true));
                     cmbLut.SelectedIndex = cmbLut.Items.Count - 1;
                 }
             };
 
-            grpLut.Controls.Add(lblDevTitle);
-            grpLut.Controls.Add(cmbDevice);
-            grpLut.Controls.Add(lblLutTitle);
-            grpLut.Controls.Add(cmbLut);
-            grpLut.Controls.Add(btnCustomLut);
-            curY += 105;
+            // Browse File & Folder
+            btnBrowseFile.Click += (s, e) => {
+                var dlg = new System.Windows.Forms.OpenFileDialog { Filter = "Video Files (*.mp4;*.mov;*.mkv)|*.mp4;*.mov;*.mkv|All Files (*.*)|*.*" };
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+                    txtInputPath.Text = dlg.FileName;
+                    AutoSelectDeviceForPath(dlg.FileName);
+                }
+            };
 
-            // === 3. Look Preset & Encoder Settings ===
-            GroupBox grpSettings = CreateSectionBox("3. LOOK STYLE & HARDWARE ENCODING OPTIONS", 940, 140, curY);
-            pnlMain.Controls.Add(grpSettings);
+            btnBrowseFolder.Click += (s, e) => {
+                var dlg = new System.Windows.Forms.FolderBrowserDialog();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+                    txtInputPath.Text = dlg.SelectedPath;
+                }
+            };
 
-            // Row 1
-            Label lblLook = new Label { Text = "Post-LUT Look Style:", Location = new Point(16, 26), AutoSize = true, ForeColor = TextMuted };
-            cmbLook = new ComboBox { Location = new Point(16, 48), Size = new Size(280, 28), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = BgInput, ForeColor = TextMain };
-            cmbLook.Items.AddRange(new object[] {
-                "Vibrant Pop (Recommended: Punchy Sky, Greens & Sharpness)",
-                "Natural Rec.709 (100% DJI Baseline Color Reference)",
-                "Cinematic Film (Filmic 35mm S-Curve, Rich Shadows)",
-                "Golden Hour (Warm Amber Sunlight & Sunset Glow)",
-                "Teal & Orange (Blockbuster Complementary Contrast)"
-            });
-            cmbLook.SelectedIndex = 0;
+            // Drag and Drop
+            mainWindow.Drop += (s, e) => {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files != null && files.Length > 0) {
+                        txtInputPath.Text = files[0];
+                        AutoSelectDeviceForPath(files[0]);
+                    }
+                }
+            };
 
-            Label lblCodec = new Label { Text = "Encoder Codec:", Location = new Point(320, 26), AutoSize = true, ForeColor = TextMuted };
-            cmbCodec = new ComboBox { Location = new Point(320, 48), Size = new Size(280, 28), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = BgInput, ForeColor = TextMain };
-            cmbCodec.Items.AddRange(new object[] {
-                "HEVC / H.265 (10-Bit RTX NVENC Hardware)",
-                "H.264 (8/10-Bit RTX NVENC Hardware)",
-                "Apple ProRes 422 HQ (Broadcast Mastering)"
-            });
-            cmbCodec.SelectedIndex = 0;
-
-            Label lblScale = new Label { Text = "Output Resolution:", Location = new Point(620, 26), AutoSize = true, ForeColor = TextMuted };
-            cmbScale = new ComboBox { Location = new Point(620, 48), Size = new Size(300, 28), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = BgInput, ForeColor = TextMain };
-            cmbScale.Items.AddRange(new object[] {
-                "Keep Source Resolution (Up to 4K 60fps)",
-                "Scale to 4K UHD (3840x2160)",
-                "Scale to 2.7K (2704x1520)",
-                "Scale to 1080p Proxy (Quick Discord / WhatsApp share)"
-            });
-            cmbScale.SelectedIndex = 0;
-
-            // Row 2
-            Label lblCq = new Label { Text = "Quality (CQ Factor):", Location = new Point(16, 88), AutoSize = true, ForeColor = TextMuted };
-            tbCq = new TrackBar { Location = new Point(16, 105), Size = new Size(220, 28), Minimum = 15, Maximum = 28, Value = 19, TickStyle = TickStyle.None };
-            lblCqVal = new Label { Text = "19 (High Quality)", Location = new Point(245, 108), AutoSize = true, ForeColor = AccentCyan, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
-            tbCq.ValueChanged += (s, e) => { lblCqVal.Text = tbCq.Value + (tbCq.Value <= 19 ? " (High Quality)" : " (Standard)"); };
-
-            chkSharpen = new CheckBox { Text = "Apply Subtle Foliage Sharpening", Location = new Point(370, 105), AutoSize = true, Checked = true, ForeColor = TextMain };
-            chkPreview = new CheckBox { Text = "Generate Comparison JPEG", Location = new Point(620, 105), AutoSize = true, Checked = true, ForeColor = TextMain };
-
-            grpSettings.Controls.Add(lblLook);
-            grpSettings.Controls.Add(cmbLook);
-            grpSettings.Controls.Add(lblCodec);
-            grpSettings.Controls.Add(cmbCodec);
-            grpSettings.Controls.Add(lblScale);
-            grpSettings.Controls.Add(cmbScale);
-            grpSettings.Controls.Add(lblCq);
-            grpSettings.Controls.Add(tbCq);
-            grpSettings.Controls.Add(lblCqVal);
-            grpSettings.Controls.Add(chkSharpen);
-            grpSettings.Controls.Add(chkPreview);
-            curY += 155;
-
-            // === 4. Side-by-Side Preview Box ===
-            GroupBox grpPreview = CreateSectionBox("4. BEFORE / AFTER COLOR GRADE COMPARISON", 940, 210, curY);
-            pnlMain.Controls.Add(grpPreview);
-
-            btnGenPreview = CreateButton("Generate Snapshot Preview", new Point(16, 26), new Size(200, 28), BgCard, AccentCyan);
+            // Action Buttons
+            btnStartGrade.Click += (s, e) => StartGradingProcess();
             btnGenPreview.Click += (s, e) => RunPreviewGeneration();
-
-            Panel pnlImgContainer = new Panel
-            {
-                Location = new Point(16, 60),
-                Size = new Size(905, 140),
-                BackColor = Color.Black,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            picPreview = new PictureBox
-            {
-                Dock = DockStyle.Fill,
-                SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.Black,
-                Visible = false
-            };
-
-            lblPreviewPlaceholder = new Label
-            {
-                Text = "Click 'Generate Snapshot Preview' or grade a video to display the split comparison (Original D-Log vs Graded Rec.709).",
-                ForeColor = TextMuted,
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-
-            pnlImgContainer.Controls.Add(picPreview);
-            pnlImgContainer.Controls.Add(lblPreviewPlaceholder);
-            grpPreview.Controls.Add(btnGenPreview);
-            grpPreview.Controls.Add(pnlImgContainer);
-            curY += 225;
-
-            // === 5. Live Logs ===
-            GroupBox grpLogs = CreateSectionBox("5. LIVE PIPELINE LOGS", 940, 120, curY);
-            pnlMain.Controls.Add(grpLogs);
-
-            txtLog = new RichTextBox
-            {
-                Location = new Point(16, 25),
-                Size = new Size(905, 85),
-                BackColor = Color.FromArgb(6, 8, 11),
-                ForeColor = AccentGreen,
-                Font = new Font("Consolas", 9f),
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true
-            };
-            txtLog.AppendText("DJI LUT Studio v2.0.0 Native Windows Engine Ready.\nSelect a file or folder above and click 'Apply LUT & Start Grading'.\n");
-            grpLogs.Controls.Add(txtLog);
-            curY += 135;
-
-            // === Bottom Action Bar ===
-            Panel pnlBottom = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 85,
-                BackColor = BgCard,
-                Padding = new Padding(20, 10, 20, 10)
-            };
-
-            progressBar = new ProgressBar
-            {
-                Location = new Point(20, 14),
-                Size = new Size(540, 16),
-                Minimum = 0,
-                Maximum = 100,
-                Value = 0
-            };
-
-            lblStatus = new Label
-            {
-                Text = "Ready to grade.",
-                Location = new Point(20, 36),
-                AutoSize = true,
-                ForeColor = TextMuted,
-                Font = new Font("Segoe UI", 9f)
-            };
-
-            lblSpeedEta = new Label
-            {
-                Text = "",
-                Location = new Point(20, 56),
-                AutoSize = true,
-                ForeColor = AccentCyan,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
-            };
-
-            btnWatcher = CreateButton("⏱ Watcher Mode", new Point(575, 20), new Size(125, 42), BgCard, TextMain);
+            btnOpenFolder.Click += (s, e) => OpenGradedFolder();
             btnWatcher.Click += (s, e) => ToggleWatcher();
 
-            btnOpenFolder = CreateButton("📁 Open Folder", new Point(710, 20), new Size(115, 42), BgCard, TextMain);
-            btnOpenFolder.Click += (s, e) => OpenGradedFolder();
-
-            btnStartGrade = new Button
-            {
-                Text = "🚀 APPLY LUT & GRADE",
-                Location = new Point(835, 20),
-                Size = new Size(135, 42),
-                BackColor = AccentCyan,
-                ForeColor = Color.FromArgb(12, 15, 20),
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                FlatStyle = FlatStyle.Flat
-            };
-            btnStartGrade.FlatAppearance.BorderSize = 0;
-            btnStartGrade.Click += (s, e) => StartGradingProcess();
-
-            pnlBottom.Controls.Add(progressBar);
-            pnlBottom.Controls.Add(lblStatus);
-            pnlBottom.Controls.Add(lblSpeedEta);
-            pnlBottom.Controls.Add(btnWatcher);
-            pnlBottom.Controls.Add(btnOpenFolder);
-            pnlBottom.Controls.Add(btnStartGrade);
-            this.Controls.Add(pnlBottom);
+            if (!string.IsNullOrEmpty(initialFile)) {
+                txtInputPath.Text = initialFile.Trim('"');
+                AutoSelectDeviceForPath(initialFile);
+            }
         }
 
-        private GroupBox CreateSectionBox(string title, int width, int height, int y)
-        {
-            return new GroupBox
-            {
-                Text = title,
-                Location = new Point(20, y),
-                Size = new Size(width, height),
-                ForeColor = TextMuted,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
-                BackColor = BgCard
-            };
-        }
-
-        private Button CreateButton(string text, Point loc, Size sz, Color bg, Color fg)
-        {
-            Button btn = new Button
-            {
-                Text = text,
-                Location = loc,
-                Size = sz,
-                BackColor = bg,
-                ForeColor = fg,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderColor = BorderColor;
-            return btn;
-        }
-
-        private void InitDatabase()
+        private static void InitDatabase()
         {
             deviceDatabase = new Dictionary<string, List<LutEntry>>();
 
@@ -455,10 +676,10 @@ namespace DJILutStudio
             };
             deviceDatabase["DJI Osmo Pocket 3"] = new List<LutEntry> {
                 new LutEntry("op3_dlogm", "Official Pocket 3 D-Log M to Rec.709 V1", true),
-                new LutEntry("op3_spring", "Master Look: Spring Pro (Fresh Greens & Soft Skin)"),
+                new LutEntry("op3_spring", "Master Look: Spring Pro (Fresh Greens)"),
                 new LutEntry("op3_summer", "Master Look: Summer Pro (Deep Cyan & Sun-Kissed)"),
-                new LutEntry("op3_autumn", "Master Look: Autumn Pro (Warm Terracotta & Amber)"),
-                new LutEntry("op3_winter", "Master Look: Winter Pro (Cool High-Contrast Clean)")
+                new LutEntry("op3_autumn", "Master Look: Autumn Pro (Warm Terracotta)"),
+                new LutEntry("op3_winter", "Master Look: Winter Pro (Cool High-Contrast)")
             };
             deviceDatabase["DJI Osmo Pocket 4 / 4 Pro"] = new List<LutEntry> {
                 new LutEntry("op4_dlog_std", "Official Pocket 4 D-Log to Rec.709 Standard", true),
@@ -468,16 +689,16 @@ namespace DJILutStudio
             };
             deviceDatabase["DJI Osmo Action 4"] = new List<LutEntry> {
                 new LutEntry("oa4_dlogm", "Official Action 4 D-Log M to Rec.709 V1", true),
-                new LutEntry("oa4_ice", "Action Look: Ice Pro (Snow & Glacial Sports)"),
-                new LutEntry("oa4_nature", "Action Look: Nature Pro (Warm Sunlight & Grass)"),
-                new LutEntry("oa4_forest", "Action Look: Forest Pro (Deep Moss & Mountain Biking)")
+                new LutEntry("oa4_ice", "Action Look: Ice Pro (Snow Sports)"),
+                new LutEntry("oa4_nature", "Action Look: Nature Pro (Warm Sunlight)"),
+                new LutEntry("oa4_forest", "Action Look: Forest Pro (Deep Moss & Trail)")
             };
             deviceDatabase["DJI Osmo Action 5 Pro"] = new List<LutEntry> {
                 new LutEntry("oa5p_dlogm", "Official Action 5 Pro D-Log M to Rec.709 V1", true),
-                new LutEntry("oa5p_mei", "Master Look: Mei / Plum (Romantic Magenta Shadows)"),
-                new LutEntry("oa5p_ju", "Master Look: Ju / Chrysanthemum (Golden Radiance)"),
-                new LutEntry("oa5p_zhu", "Master Look: Zhu / Bamboo (Vibrant Outdoor Contrast)"),
-                new LutEntry("oa5p_lan", "Master Look: Lan / Orchid (Cool Oceanic Teal)")
+                new LutEntry("oa5p_mei", "Master Look: Mei / Plum (Romantic Magenta)"),
+                new LutEntry("oa5p_ju", "Master Look: Ju / Chrysanthemum (Golden Sunset)"),
+                new LutEntry("oa5p_zhu", "Master Look: Zhu / Bamboo (Vibrant Green)"),
+                new LutEntry("oa5p_lan", "Master Look: Lan / Orchid (Oceanic Teal)")
             };
             deviceDatabase["DJI Osmo Action 6"] = new List<LutEntry> {
                 new LutEntry("oa6_dlogm", "Official Action 6 D-Log M to Rec.709", true)
@@ -498,15 +719,9 @@ namespace DJILutStudio
             deviceDatabase["DJI Generic / Universal D-Log M"] = new List<LutEntry> {
                 new LutEntry("generic_dlogm_rec709", "Universal DJI D-Log M to Rec.709", true)
             };
-
-            foreach (var key in deviceDatabase.Keys)
-            {
-                cmbDevice.Items.Add(key);
-            }
-            cmbDevice.SelectedIndex = 0;
         }
 
-        private void PopulateLutsForSelectedDevice()
+        private static void PopulateLutsForSelectedDevice()
         {
             cmbLut.Items.Clear();
             string sel = cmbDevice.SelectedItem as string;
@@ -523,7 +738,7 @@ namespace DJILutStudio
             }
         }
 
-        private void AutoSelectDeviceForPath(string path)
+        private static void AutoSelectDeviceForPath(string path)
         {
             string upper = Path.GetFileName(path).ToUpperInvariant();
             if (upper.Contains("AVATA")) cmbDevice.SelectedItem = "DJI Avata 2";
@@ -538,34 +753,18 @@ namespace DJILutStudio
             else cmbDevice.SelectedItem = "DJI O4 Pro / Air Unit";
         }
 
-        private void MainForm_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                e.Effect = DragDropEffects.Copy;
-        }
-
-        private void MainForm_DragDrop(object sender, DragEventArgs e)
-        {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files != null && files.Length > 0)
-            {
-                txtInputPath.Text = files[0];
-                AutoSelectDeviceForPath(files[0]);
-            }
-        }
-
-        private void StartGradingProcess()
+        private static void StartGradingProcess()
         {
             if (activeProcess != null && !activeProcess.HasExited)
             {
-                MessageBox.Show("A grading job is currently running.", "DJI LUT Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("A grading job is currently running.", "DJI LUT Studio", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             string inputPath = txtInputPath.Text.Trim('"');
             if (string.IsNullOrEmpty(inputPath) || (!File.Exists(inputPath) && !Directory.Exists(inputPath)))
             {
-                MessageBox.Show("Please enter a valid file or folder path.", "DJI LUT Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter a valid file or folder path.", "DJI LUT Studio", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -581,12 +780,12 @@ namespace DJILutStudio
             string[] scaleMap = { "keep", "4k", "2.7k", "1080p" };
             string scale = scaleMap[Math.Max(0, cmbScale.SelectedIndex)];
 
-            int cq = tbCq.Value;
-            string sharpenFlag = chkSharpen.Checked ? "--sharpen" : "";
-            string previewFlag = chkPreview.Checked ? "-p" : "";
+            int cq = (int)sliderCq.Value;
+            string sharpenFlag = (chkSharpen.IsChecked == true) ? "--sharpen" : "";
+            string previewFlag = (chkPreview.IsChecked == true) ? "-p" : "";
 
-            btnStartGrade.Enabled = false;
-            btnStartGrade.Text = "GRADING...";
+            btnStartGrade.IsEnabled = false;
+            btnStartGrade.Content = "GRADING...";
             progressBar.Value = 0;
             lblStatus.Text = "Grading with NVIDIA RTX NVENC in progress...";
             lblSpeedEta.Text = "";
@@ -623,14 +822,14 @@ namespace DJILutStudio
                     activeProcess.WaitForExit();
 
                     bool success = (activeProcess.ExitCode == 0);
-                    this.Invoke(new Action(() =>
+                    mainWindow.Dispatcher.Invoke(new Action(() =>
                     {
-                        btnStartGrade.Enabled = true;
-                        btnStartGrade.Text = "🚀 APPLY LUT & GRADE";
+                        btnStartGrade.IsEnabled = true;
+                        btnStartGrade.Content = "🚀 APPLY LUT & GRADE";
                         if (success)
                         {
                             progressBar.Value = 100;
-                            lblStatus.Text = "Grading Completed! Output placed in 'graded' folder.";
+                            lblStatus.Text = "Grading Complete! Placed in 'graded' folder.";
                             lblSpeedEta.Text = "✔ Render Finished";
                             txtLog.AppendText("[SUCCESS] Grading complete!\n");
                             LoadPreviewImageIfAvailable(inputPath);
@@ -644,10 +843,10 @@ namespace DJILutStudio
                 }
                 catch (Exception ex)
                 {
-                    this.Invoke(new Action(() =>
+                    mainWindow.Dispatcher.Invoke(new Action(() =>
                     {
-                        btnStartGrade.Enabled = true;
-                        btnStartGrade.Text = "🚀 APPLY LUT & GRADE";
+                        btnStartGrade.IsEnabled = true;
+                        btnStartGrade.Content = "🚀 APPLY LUT & GRADE";
                         lblStatus.Text = "Error: " + ex.Message;
                         txtLog.AppendText("[EXCEPTION] " + ex.Message + "\n");
                     }));
@@ -657,17 +856,15 @@ namespace DJILutStudio
             workerThread.Start();
         }
 
-        private void ParseProcessOutput(string line)
+        private static void ParseProcessOutput(string line)
         {
             if (string.IsNullOrEmpty(line)) return;
 
-            this.Invoke(new Action(() =>
+            mainWindow.Dispatcher.Invoke(new Action(() =>
             {
                 txtLog.AppendText(line + "\n");
-                txtLog.SelectionStart = txtLog.Text.Length;
-                txtLog.ScrollToCaret();
+                txtLog.ScrollToEnd();
 
-                // Regex for percentage progress: [█████░░] 45.2% | 55.0 fps (3.2x) | ETA: 00:04
                 Match mPct = Regex.Match(line, @"(\d+(?:\.\d+)?)%");
                 if (mPct.Success)
                 {
@@ -684,12 +881,12 @@ namespace DJILutStudio
             }));
         }
 
-        private void RunPreviewGeneration()
+        private static void RunPreviewGeneration()
         {
             string inputPath = txtInputPath.Text.Trim('"');
             if (!File.Exists(inputPath))
             {
-                MessageBox.Show("Please select a single video file to preview.", "DJI LUT Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Please select a single video file to preview.", "DJI LUT Studio", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -698,8 +895,8 @@ namespace DJILutStudio
             string[] lookMap = { "vibrant", "natural", "cinematic", "golden", "teal_orange" };
             string look = lookMap[Math.Max(0, cmbLook.SelectedIndex)];
 
-            btnGenPreview.Enabled = false;
-            btnGenPreview.Text = "Generating Preview...";
+            btnGenPreview.IsEnabled = false;
+            btnGenPreview.Content = "Generating...";
 
             ThreadPool.QueueUserWorkItem((state) =>
             {
@@ -727,10 +924,10 @@ namespace DJILutStudio
                     Process p = Process.Start(psi);
                     p.WaitForExit();
 
-                    this.Invoke(new Action(() =>
+                    mainWindow.Dispatcher.Invoke(new Action(() =>
                     {
-                        btnGenPreview.Enabled = true;
-                        btnGenPreview.Text = "Generate Snapshot Preview";
+                        btnGenPreview.IsEnabled = true;
+                        btnGenPreview.Content = "Generate Snapshot";
                         if (File.Exists(outPrev))
                         {
                             LoadPreviewImageDirect(outPrev);
@@ -739,17 +936,17 @@ namespace DJILutStudio
                 }
                 catch (Exception ex)
                 {
-                    this.Invoke(new Action(() =>
+                    mainWindow.Dispatcher.Invoke(new Action(() =>
                     {
-                        btnGenPreview.Enabled = true;
-                        btnGenPreview.Text = "Generate Snapshot Preview";
+                        btnGenPreview.IsEnabled = true;
+                        btnGenPreview.Content = "Generate Snapshot";
                         txtLog.AppendText("[PREVIEW ERROR] " + ex.Message + "\n");
                     }));
                 }
             });
         }
 
-        private void LoadPreviewImageIfAvailable(string inputPath)
+        private static void LoadPreviewImageIfAvailable(string inputPath)
         {
             try
             {
@@ -767,21 +964,23 @@ namespace DJILutStudio
             catch { }
         }
 
-        private void LoadPreviewImageDirect(string path)
+        private static void LoadPreviewImageDirect(string path)
         {
             try
             {
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    picPreview.Image = Image.FromStream(fs);
-                }
-                picPreview.Visible = true;
-                lblPreviewPlaceholder.Visible = false;
+                BitmapImage bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(path, UriKind.Absolute);
+                bmp.EndInit();
+                imgPreview.Source = bmp;
+                imgPreview.Visibility = Visibility.Visible;
+                lblPreviewPlaceholder.Visibility = Visibility.Collapsed;
             }
             catch { }
         }
 
-        private void OpenGradedFolder()
+        private static void OpenGradedFolder()
         {
             string inPath = txtInputPath.Text.Trim('"');
             string targetDir = "";
@@ -799,12 +998,12 @@ namespace DJILutStudio
             }
         }
 
-        private void ToggleWatcher()
+        private static void ToggleWatcher()
         {
             string inPath = txtInputPath.Text.Trim('"');
             if (string.IsNullOrEmpty(inPath) || !Directory.Exists(inPath))
             {
-                MessageBox.Show("Please select a folder to watch (e.g. D:\\dji\\incoming).", "DJI LUT Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Please select a folder to watch (e.g. D:\\dji\\incoming).", "DJI LUT Studio", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -813,15 +1012,6 @@ namespace DJILutStudio
                 wslDistro, appDir, inPath, outDir);
 
             Process.Start(new ProcessStartInfo("cmd.exe", "/c start \"DJI LUT Studio - Folder Watcher\" wsl.exe " + args));
-        }
-
-        [STAThread]
-        public static void Main(string[] args)
-        {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            string initialPath = (args != null && args.Length > 0) ? args[0] : null;
-            Application.Run(new MainForm(initialPath));
         }
     }
 }
