@@ -6,7 +6,7 @@
 #define MyAppName "DJI LUT Studio"
 #define MyAppVersion "2.0.0"
 #define MyAppPublisher "DJI LUT Studio Open Source Community"
-#define MyAppURL "https://github.com/gal756/LUT-adder"
+#define MyAppURL "https://github.com/gal756/DJI-LUT-Studio-V2"
 #define MyAppExeName "DJI_LUT_Studio.exe"
 #define SourceDir "C:\Users\gal75\AppData\Local\Temp\DJI_LUT_Studio_Dist"
 

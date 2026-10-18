@@ -236,7 +236,7 @@ flowchart TD
    - Built `DJI_LUT_Studio_Setup_v2.0.0.exe` (68.4 MB LZMA2) with custom 256x256 embedded lens icon and uninstaller.
    - Tested and verified on Windows Desktop.
 7. ✔ **Official Showcase Website & Windows Installer Publishing (`docs/`)**:
-   - Built an interactive, pro glassmorphic landing page in `docs/` ready for GitHub Pages (`https://gal756.github.io/LUT-adder/`).
+   - Built an interactive, pro glassmorphic landing page in `docs/` ready for GitHub Pages (`https://gal756.github.io/DJI-LUT-Studio-V2/`).
    - Interactive Before/After slider demonstrating 10-bit D-Log M vs Rec.709 color transformation.
    - High-resolution screenshot showcase (WPF Desktop App, Smart EIS detection, Gyroflow bridge, Split QA Preview).
    - Real-time searchable and filterable device & LUT explorer across all 20+ models and 49 verified LUTs.
