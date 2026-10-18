@@ -24,3 +24,10 @@ Screenshot*.png
 
 # Distribution build staging
 dist/
+
+# Credentials and keys
+github*
+id_*
+*.pub
+*.pem
+*.key
