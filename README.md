@@ -8,7 +8,8 @@
 [![Download Installer](https://img.shields.io/badge/Download-Windows%20Installer%20(.exe)-00e5ff.svg)](https://github.com/gal756/DJI-LUT-Studio-V2/releases/download/v2.0.0/DJI_LUT_Studio_Setup_v2.0.0.exe)
 
 > **🌐 Live Interactive Showcase & Web Page:** [https://gal756.github.io/DJI-LUT-Studio-V2/](https://gal756.github.io/DJI-LUT-Studio-V2/)  
-> **⬇️ Official 1-Click Windows Download:** [**`DJI_LUT_Studio_Setup_v2.0.0.exe`**](https://github.com/gal756/DJI-LUT-Studio-V2/releases/download/v2.0.0/DJI_LUT_Studio_Setup_v2.0.0.exe) *(68.4 MB &bull; Standalone 64-bit &bull; Zero WSL or Python needed)*
+> **⬇️ Official 1-Click Windows Download:** [**`DJI_LUT_Studio_Setup_v2.0.0.exe`**](https://github.com/gal756/DJI-LUT-Studio-V2/releases/download/v2.0.0/DJI_LUT_Studio_Setup_v2.0.0.exe) *(68.4 MB &bull; Standalone 64-bit &bull; Zero WSL or Python needed)*  
+> *(All binary builds & checksums also hosted on [GitHub Releases](https://github.com/gal756/DJI-LUT-Studio-V2/releases))*
 
 **DJI LUT Studio** is an open-source, multi-GPU accelerated video color grading and stabilization software application designed for Windows 10 & 11. It packages **all 49 official DJI 3D conversion LUTs** alongside calibrated cinematic looks, giving creators a simple, professional, 1-click tool to grade flat 10-bit D-Log and D-Log M drone and action camera footage into rich, broadcast-grade Rec.709 video.
 
