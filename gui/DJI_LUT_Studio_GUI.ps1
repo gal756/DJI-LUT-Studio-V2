@@ -14,6 +14,15 @@ if ($LASTEXITCODE -eq 0) {
     $wslCmd = "wsl.exe"
 }
 
+# Dynamically resolve repository root in WSL
+$winRepoDir = Split-Path -Parent $PSScriptRoot
+$wslAppDir = (wsl.exe -d $wslDistro wslpath -u "$winRepoDir" 2>$null)
+if (-not $wslAppDir) {
+    $wslAppDir = "/home/gal756/LUT-adder"
+} else {
+    $wslAppDir = $wslAppDir.Trim()
+}
+
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -389,10 +398,7 @@ $btnStartGrade.Add_Click({
     $txtLog.Text = "[INFO] Launching DJI LUT Studio pipeline...`n[INFO] Target: $targetPath`n[INFO] LUT: $lutId`n[INFO] Look: $look`n"
     if ($chkGyroflow.IsChecked) { $txtLog.Text += "[INFO] Gyroflow Stabilization: ENABLED`n" }
 
-    $wslScriptPath = "/home/gal756/LUT-adder/pipeline.py"
-    $cmdArgs = "-e /usr/bin/python3 $wslScriptPath `"$targetPath`" --look $look -c $codec --scale $scale $sharpenFlag $previewFlag $gyroFlag"
-
-    Start-Process -FilePath "wsl.exe" -ArgumentList "-d", $wslDistro, "-e", "/usr/bin/python3", "/home/gal756/LUT-adder/dji_lut_studio/cli.py", "`"$targetPath`"", "-l", $lutId, "--look", $look, "-c", $codec, "--scale", $scale, $sharpenFlag, $previewFlag, $gyroFlag -Wait
+    Start-Process -FilePath "wsl.exe" -ArgumentList "-d", $wslDistro, "-e", "/usr/bin/python3", "$wslAppDir/dji_lut_studio/cli.py", "`"$targetPath`"", "-l", $lutId, "--look", $look, "-c", $codec, "--scale", $scale, $sharpenFlag, $previewFlag, $gyroFlag -Wait
 
     $prgBar.IsIndeterminate = $false
     $prgBar.Value = 100

@@ -42,7 +42,7 @@ DIM = "\033[2m"
 RESET = "\033[0m"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_LUT = SCRIPT_DIR / "lut" / "DJI_O4_D-Log_M_to_Rec.709.cube"
+DEFAULT_LUT = SCRIPT_DIR / "lut_library" / "drones" / "DJI_O4_Air_Unit_D-Log_M_to_Rec709.cube"
 DEFAULT_WATCH_DIR = SCRIPT_DIR / "input"
 DEFAULT_OUTPUT_DIR = SCRIPT_DIR / "output"
 

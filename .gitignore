@@ -13,7 +13,6 @@ preview_cache/
 *.jpg
 *.jpeg
 !docs/assets/images/*
-!assets/images/*
 
 # IDE & OS
 .DS_Store

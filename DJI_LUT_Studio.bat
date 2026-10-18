@@ -11,6 +11,10 @@ if %ERRORLEVEL% EQU 0 (
     set WSL_RUN=wsl.exe
 )
 
+:: Detect repository path in WSL dynamically
+for /f "tokens=*" %%i in ('%WSL_RUN% wslpath "%~dp0" 2^>nul') do set "WSL_REPO_DIR=%%i"
+if "%WSL_REPO_DIR%"=="" set "WSL_REPO_DIR=/home/gal756/LUT-adder"
+
 :: If files or folders were dragged onto the batch file, go directly to DRAG_DROP mode
 if not "%~1"=="" goto DRAG_DROP
 
@@ -49,7 +53,7 @@ goto MENU
 :LAUNCH_GYROFLOW
 cls
 echo [INFO] Launching Gyroflow Desktop GUI...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --open-gyroflow
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --open-gyroflow
 echo.
 pause
 goto MENU
@@ -67,13 +71,13 @@ exit /b
 cls
 echo [INFO] Starting DJI LUT Studio Web Server on http://localhost:8080 ...
 start "" "http://localhost:8080"
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/web_server.py 8080
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/web_server.py 8080
 pause
 goto MENU
 
 :LAUNCH_CLI
 cls
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py -i
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py -i
 pause
 goto MENU
 
@@ -89,13 +93,13 @@ echo.
 echo (Press Ctrl+C to stop watching)
 echo =====================================================================
 echo.
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py -w "D:\dji\incoming" -o "D:\dji\graded" --look vibrant -p
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py -w "D:\dji\incoming" -o "D:\dji\graded" --look vibrant -p
 pause
 goto MENU
 
 :LIST_LUTS
 cls
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --list-luts
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --list-luts
 echo.
 pause
 goto MENU
@@ -103,7 +107,7 @@ goto MENU
 :BATCH_D_DJI
 cls
 echo [INFO] Scanning D:\dji for DJI video clips...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py "D:\dji" --look vibrant --sharpen -p
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py "D:\dji" --look vibrant --sharpen -p
 echo.
 pause
 goto MENU
@@ -142,37 +146,37 @@ if errorlevel 1 goto LOOK_VIBRANT
 :LOOK_GYROFLOW
 cls
 echo [INFO] Processing with GYROFLOW STABILIZATION + VIBRANT POP...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py -g --look vibrant --sharpen -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py -g --look vibrant --sharpen -p %*
 goto FINISHED
 
 :LOOK_VIBRANT
 cls
 echo [INFO] Processing with VIBRANT POP look...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --look vibrant --sharpen -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --look vibrant --sharpen -p %*
 goto FINISHED
 
 :LOOK_NATURAL
 cls
 echo [INFO] Processing with NATURAL REC.709 look...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --look natural -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --look natural -p %*
 goto FINISHED
 
 :LOOK_CINEMATIC
 cls
 echo [INFO] Processing with CINEMATIC FILM look...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --look cinematic --sharpen -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --look cinematic --sharpen -p %*
 goto FINISHED
 
 :LOOK_GOLDEN
 cls
 echo [INFO] Processing with GOLDEN HOUR look...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --look golden -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --look golden -p %*
 goto FINISHED
 
 :LOOK_1080P
 cls
 echo [INFO] Processing with QUICK 1080P PROXY...
-%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --look vibrant --scale 1080p -p %*
+%WSL_RUN% -e /usr/bin/python3 %WSL_REPO_DIR%/dji_lut_studio/cli.py --look vibrant --scale 1080p -p %*
 goto FINISHED
 
 :FINISHED

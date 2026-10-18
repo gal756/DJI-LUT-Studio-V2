@@ -177,6 +177,13 @@ See the full **[CONTINUATION_GUIDE.md](CONTINUATION_GUIDE.md)** for architecture
 
 ---
 
-## 📄 License
-This project is licensed under the open-source **MIT License** - see the [LICENSE](LICENSE) file for details.
-All official DJI 3D LUTs are property of SZ DJI Technology Co., Ltd.
+## 📄 License & Legal Notices
+
+- **Application Code:** Licensed under the open-source **[MIT License](LICENSE)**.
+- **Third-Party Licenses & Trademarks:** See **[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)** for detailed legal notices.
+
+### ⚖️ Trademark & Fair Use Disclaimer
+> **Notice:** DJI LUT Studio is an independent, community-driven open-source project and is **not affiliated with, endorsed by, or sponsored by SZ DJI Technology Co., Ltd.**  
+> *DJI*, *Osmo*, *Mavic*, *Avata*, *Phantom*, *Zenmuse*, *D-Log*, *D-Log M*, *RockSteady*, and *HorizonSteady* are registered trademarks of SZ DJI Technology Co., Ltd.  
+> Official 3D LUT conversion profiles (`.cube`) remain the intellectual property of SZ DJI Technology Co., Ltd. and are included strictly for interoperability, research, and workflow convenience under Fair Use principles.  
+> FFmpeg is licensed under the GNU LGPL/GPL (https://ffmpeg.org). Gyroflow is licensed under GNU GPLv3 (https://gyroflow.xyz).
