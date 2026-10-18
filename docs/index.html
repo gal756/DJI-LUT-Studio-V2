@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJI LUT Studio — Multi-GPU Video Color Grading & Gyroflow Stabilization Suite</title>
+  
+  <!-- SEO & Social Meta -->
+  <meta name="description" content="Standalone, multi-GPU accelerated video color grading and Gyroflow stabilization software for DJI drones and action cameras. Convert 10-bit D-Log and D-Log M footage into broadcast Rec.709 with zero WSL required.">
+  <meta name="keywords" content="DJI, D-Log, D-Log M, LUT, Color Grading, Gyroflow, Video Stabilization, Avata 2, O4 Air Unit, Osmo Pocket 3, Action 5 Pro, NVENC, AMF, QuickSync, Windows">
+  <meta property="og:title" content="DJI LUT Studio — Multi-GPU Video Color Grading & Stabilization">
+  <meta property="og:description" content="Official 49 DJI 3D LUTs, hardware acceleration (NVIDIA, AMD, Intel), and Gyroflow stabilization in a native 1-click Windows desktop app.">
+  <meta property="og:image" content="assets/images/split-preview.jpg">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- ===================================================================
+       1. Sticky Header & Navigation
+       =================================================================== -->
+  <header class="site-header">
+    <div class="container nav-wrapper">
+      <a href="#" class="brand">
+        <img src="assets/images/logo.png" alt="DJI LUT Studio Logo" class="brand-logo">
+        <span class="brand-text">
+          DJI LUT Studio
+          <span class="brand-badge">v2.0.0</span>
+        </span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#comparison" class="nav-link">Comparison</a></li>
+        <li><a href="#screenshots" class="nav-link">Screenshots</a></li>
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#catalog" class="nav-link">Cameras & LUTs</a></li>
+        <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+        <li><a href="#specs" class="nav-link">Specs</a></li>
+        <li><a href="#faq" class="nav-link">FAQ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://github.com/gal756/LUT-adder" target="_blank" rel="noopener" class="btn-github" title="View Source on GitHub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+        <a href="#download" class="btn-download-nav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download Installer
+        </a>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================
+       2. Hero Section
+       =================================================================== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-pill-wrapper">
+        <span class="pill pill-cyan">
+          <span>✨</span>
+          <span>v2.0.0 Standalone Edition • Zero-WSL Required • Multi-GPU Native</span>
+        </span>
+      </div>
+
+      <h1 class="hero-title">
+        Broadcast-Grade Color Grading & Gyroflow Stabilization for <span class="text-gradient">DJI Footage</span>
+      </h1>
+
+      <p class="hero-desc">
+        Transform flat 10-bit D-Log and D-Log M video from your DJI drones and action cameras into rich, color-accurate Rec.709 with tetrahedral interpolation, native Multi-GPU acceleration (NVIDIA NVENC, AMD AMF, Intel QSV), and automated Gyroflow camera telemetry stabilization.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#download" class="btn-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          <span>Download Windows Installer</span>
+          <span style="font-size: 0.8rem; opacity: 0.8; font-weight: normal;">(68 MB)</span>
+        </a>
+
+        <a href="https://github.com/gal756/LUT-adder" target="_blank" rel="noopener" class="btn-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          View Source & Star
+        </a>
+      </div>
+
+      <div class="hero-meta">
+        <span class="hero-meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--green)">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Windows 10 / 11 (64-Bit)
+        </span>
+        <span class="hero-meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--green)">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          NVIDIA / AMD / Intel Hardware 10-Bit
+        </span>
+        <span class="hero-meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--green)">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          49 Official & Creative 3D LUTs
+        </span>
+        <span class="hero-meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--green)">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          100% Free & Open Source (MIT)
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       3. Interactive Before / After Comparison Slider
+       =================================================================== -->
+  <section class="comparison-section" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Real-World Grading Demonstration</div>
+        <h2 class="section-title">See the D-Log Transformation in Action</h2>
+        <p class="section-desc">
+          Drag the interactive slider below to inspect the precision color mapping from washed-out 10-bit D-Log M into calibrated, high-dynamic-range Rec.709.
+        </p>
+      </div>
+
+      <div class="comparison-box" id="comparisonBox">
+        <div class="comparison-container">
+          <!-- Background: Before Image (D-Log M) -->
+          <img src="assets/images/before-dlog.jpg" alt="Original Flat D-Log M Footage" class="comparison-img comparison-before">
+          <span class="comparison-badge badge-right">ORIGINAL (D-LOG M)</span>
+
+          <!-- Foreground Clipped: After Image (Rec.709 Graded) -->
+          <div class="comparison-after-wrapper">
+            <img src="assets/images/after-rec709.jpg" alt="Graded Rec.709 Broadcast Video" class="comparison-img">
+            <span class="comparison-badge badge-left">GRADED (REC.709)</span>
+          </div>
+
+          <!-- Draggable Divider Line & Thumb -->
+          <div class="slider-handle">
+            <div class="slider-button">
+              <span>&#8644;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slider-tip">
+        <span>↔ Drag or tap anywhere to slide &bull; Use Left / Right arrow keys on keyboard</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       4. Screenshot Gallery & Application Interface
+       =================================================================== -->
+  <section class="gallery-section" id="screenshots">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Application Interface</div>
+        <h2 class="section-title">Engineered for Creative Speed & Clarity</h2>
+        <p class="section-desc">
+          Every tool you need in a focused, high-DPI native dark interface designed to grade clips and batches without opening bloated NLEs.
+        </p>
+      </div>
+
+      <div class="gallery-tabs">
+        <button class="tab-btn active" data-tab="gui">
+          <span>🖥️</span> Desktop WPF App
+        </button>
+        <button class="tab-btn" data-tab="gyroflow">
+          <span>🎯</span> Smart EIS & Gyroflow
+        </button>
+        <button class="tab-btn" data-tab="controls">
+          <span>🎛️</span> Camera Controls & Options
+        </button>
+        <button class="tab-btn" data-tab="preview">
+          <span>⚖️</span> Split-Screen QA Preview
+        </button>
+      </div>
+
+      <div class="gallery-display">
+        <img src="assets/images/app-gui.png" alt="DJI LUT Studio GUI Screenshot" id="galleryFrame" class="gallery-frame">
+        <div class="gallery-caption">
+          <div>
+            <div class="caption-title" id="galleryCaptionTitle">🖥️ Native Windows Desktop GUI (WPF .NET 4.8)</div>
+            <div class="caption-desc" id="galleryCaptionDesc">
+              Sleek dark-themed interface with real-time multi-GPU encoding telemetry, live progress indicators, and instant side-by-side verification.
+            </div>
+          </div>
+          <a href="#download" class="btn-github" style="font-size: 0.8rem;">Try It Now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       5. Core Features Grid
+       =================================================================== -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Key Capabilities</div>
+        <h2 class="section-title">Built for Drones, Action Cams & Creators</h2>
+        <p class="section-desc">
+          Everything from hardware encoding to camera telemetry stabilization is pre-configured and automated under the hood.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-cyan">
+            <span>💻</span>
+          </div>
+          <h3 class="feature-title">Zero-WSL Standalone App</h3>
+          <p class="feature-text">
+            No WSL, no Python virtual environments, and no terminal commands required. Run the standard Windows installer and enjoy a 100% native desktop application with bundled binaries.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-green">
+            <span>⚡</span>
+          </div>
+          <h3 class="feature-title">Multi-GPU Hardware Pipeline</h3>
+          <p class="feature-text">
+            Automatically detects your hardware on launch. Harnesses NVIDIA NVENC (10-bit P010LE), AMD AMF, and Intel Quick Sync Video for ultra-fast exports, with a universal multi-core CPU fallback.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-blue">
+            <span>🎯</span>
+          </div>
+          <h3 class="feature-title">Integrated Gyroflow Bridge</h3>
+          <p class="feature-text">
+            Extracts raw gyro motion telemetry (<code class="badge-tag">djmd</code>) from DJI Avata, Avata 2, O3, O4 Air Unit, and Osmo Action 4/5. Stabilizes camera motion with Gyroflow before color grading in one seamless flow.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-amber">
+            <span>🛡️</span>
+          </div>
+          <h3 class="feature-title">Smart EIS Auto-Detection</h3>
+          <p class="feature-text">
+            Inspects camera metadata tags for RockSteady (<code class="badge-tag">EIS:RS</code>) and HorizonSteady (<code class="badge-tag">EIS:HS</code>). Disables redundant Gyroflow passes with clear advisory banners to prevent sync errors.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-cyan">
+            <span>🎨</span>
+          </div>
+          <h3 class="feature-title">49 Official 3D LUTs</h3>
+          <p class="feature-text">
+            Official tetrahedral 3D conversion LUTs for all DJI drone series (Mavic, Air, Mini, O4, Avata), Osmo Action, Pocket series, Zenmuse, and artistic film looks (Vibrant, 35mm, Golden Hour, Teal/Orange).
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-green">
+            <span>🔍</span>
+          </div>
+          <h3 class="feature-title">Camera Model Auto-Matching</h3>
+          <p class="feature-text">
+            Examines video container metadata and filename conventions. Accurately identifies your specific camera (such as DJI O4 Pro Air Unit vs Phantom) and pre-selects the recommended conversion LUT.
+          </p>
+        </div>
+
+        <!-- Feature 7 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-blue">
+            <span>⚖️</span>
+          </div>
+          <h3 class="feature-title">Side-by-Side QA Previews</h3>
+          <p class="feature-text">
+            Every export automatically outputs a high-resolution split comparison JPEG (<code class="badge-tag">_preview.jpg</code>) showing original D-Log next to graded Rec.709 for fast visual verification.
+          </p>
+        </div>
+
+        <!-- Feature 8 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper icon-amber">
+            <span>📂</span>
+          </div>
+          <h3 class="feature-title">Continuous Folder Watcher</h3>
+          <p class="feature-text">
+            Offload your drone SD card into an incoming folder on your PC. DJI LUT Studio detects new clips in real time and automatically grades them into your destination directory in the background.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       6. Supported Cameras & LUT Catalog Explorer
+       =================================================================== -->
+  <section class="catalog-section" id="catalog">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Verified Device Matrix</div>
+        <h2 class="section-title">Explore Supported Cameras & 3D LUTs</h2>
+        <p class="section-desc">
+          Search or filter across all 20+ DJI camera models and 49 conversion and artistic LUTs verified in the official catalog.
+        </p>
+      </div>
+
+      <div class="catalog-controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="catalogSearch" class="search-input" placeholder="Search camera (e.g. Avata 2, O4 Pro, Action 5, Pocket 3, Mavic)...">
+        </div>
+
+        <div class="category-chips">
+          <button class="chip-btn active" data-cat="all">All Profiles</button>
+          <button class="chip-btn" data-cat="drones">Drones & Air Units</button>
+          <button class="chip-btn" data-cat="action">Action & Pocket</button>
+          <button class="chip-btn" data-cat="cinema">Cinema & Enterprise</button>
+          <button class="chip-btn" data-cat="creative">Artistic Looks</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--text-dim); display: flex; justify-content: space-between;">
+        <span id="catalogCount">Loading profiles...</span>
+        <span>Includes Official DJI .cube LUTs + Master Creative Looks</span>
+      </div>
+
+      <div class="catalog-grid" id="catalogGrid">
+        <!-- Rendered by main.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       7. How It Works (3 Simple Steps)
+       =================================================================== -->
+  <section class="steps-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Workflow</div>
+        <h2 class="section-title">Color Grade in Three Effortless Steps</h2>
+        <p class="section-desc">
+          Skip manual node setups and LUT folder hunting in heavy video suites.
+        </p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon">📁</div>
+          <h3 class="step-title">Drag & Drop Footage</h3>
+          <p class="step-desc">
+            Drag single video files or an entire folder of DJI D-Log / D-Log M recordings directly onto the desktop application.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-icon">🤖</div>
+          <h3 class="step-title">Intelligent Auto-Detect</h3>
+          <p class="step-desc">
+            The engine reads encoder tags, matches the drone profile, assigns the official 3D LUT, and verifies whether Gyroflow is needed.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon">🚀</div>
+          <h3 class="step-title">1-Click GPU Render</h3>
+          <p class="step-desc">
+            Click <strong>Apply LUT & Grade</strong>. Your GPU renders broadcast Rec.709 with tetrahedral interpolation and outputs a split comparison preview.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       8. Dedicated Download Section (PUBLISHING JUST WINDOWS INSTALLER)
+       =================================================================== -->
+  <section class="download-section" id="download">
+    <div class="container">
+      <div class="download-spotlight">
+        
+        <div class="download-header">
+          <div class="download-badge">
+            <span>🛡️</span>
+            <span>Official Windows Release &bull; 64-Bit Standalone</span>
+          </div>
+          <h2 class="download-title">Download DJI LUT Studio v2.0.0</h2>
+          <p class="download-subtitle">
+            Single-click self-contained setup. Bundles the native desktop GUI, multi-GPU hardware accelerated FFmpeg 7.x, and all 49 verified 3D LUTs. Zero WSL or Python setup needed.
+          </p>
+        </div>
+
+        <!-- Main Singular Installer Download CTA -->
+        <div class="download-main-action">
+          <a href="https://github.com/gal756/LUT-adder/releases/download/v2.0.0/DJI_LUT_Studio_Setup_v2.0.0.exe" class="btn-download-hero" id="btnDownloadExe">
+            <span class="icon-dl">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+            </span>
+            <div>
+              <span class="dl-text-primary">Download Windows Installer (.exe)</span>
+              <span class="dl-text-secondary">DJI_LUT_Studio_Setup_v2.0.0.exe &bull; 68.4 MB &bull; Multi-GPU Edition</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- File Specifications Matrix -->
+        <div class="file-specs">
+          <div class="spec-item">
+            <span class="spec-label">Target Platform</span>
+            <span class="spec-val">Windows 10 / Windows 11 (64-bit)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Installer Size</span>
+            <span class="spec-val">68.4 MB (71,760,262 bytes)</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">Compression</span>
+            <span class="spec-val">Inno Setup LZMA2 / Ultra64</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-label">License</span>
+            <span class="spec-val">MIT Open Source (Free)</span>
+          </div>
+        </div>
+
+        <!-- SHA-256 Checksum Box with Copy Button -->
+        <div class="checksum-box">
+          <div class="checksum-info">
+            <span class="checksum-label">SHA-256:</span>
+            <code class="checksum-code" id="checksumCode">f65ed310550c7e6df20ae4789bd747254574d99b71064caa499e62b6174e2c8b</code>
+          </div>
+          <button class="btn-copy" id="btnCopyChecksum" title="Copy SHA-256 hash to clipboard">Copy Hash</button>
+        </div>
+
+        <!-- What's Bundled Inside -->
+        <div class="included-grid">
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>Native Windows App</strong>: 64-bit WPF application (<code class="badge-tag">DJI_LUT_Studio.exe</code>)</span>
+          </div>
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>Multi-GPU FFmpeg 7.x</strong>: Bundled static build with NVENC, AMF, QSV & libx265</span>
+          </div>
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>49 Official 3D LUTs</strong>: Complete pre-installed catalog covering all drones & cams</span>
+          </div>
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>Desktop & Start Menu Shortcuts</strong>: 1-click launch or drag & drop onto icon</span>
+          </div>
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>Integrated Uninstaller</strong>: Clean removal anytime via Windows Settings / Apps</span>
+          </div>
+          <div class="included-item">
+            <span class="included-check">✔</span>
+            <span><strong>100% Offline Capable</strong>: No internet connection or subscription required</span>
+          </div>
+        </div>
+
+        <!-- 3-Step Installation Flow -->
+        <div class="install-flow">
+          <div class="flow-title">
+            <span>⚡</span>
+            <span>Installation Instructions (Under 60 Seconds)</span>
+          </div>
+          <div class="flow-steps">
+            <div class="flow-step-item">
+              <span class="flow-badge">1</span>
+              <span>Download <code class="badge-tag">DJI_LUT_Studio_Setup_v2.0.0.exe</code> above.</span>
+            </div>
+            <div class="flow-step-item">
+              <span class="flow-badge">2</span>
+              <span>Double-click the installer and follow the setup wizard prompts.</span>
+            </div>
+            <div class="flow-step-item">
+              <span class="flow-badge">3</span>
+              <span>Launch from your desktop shortcut, drop in your video, and grade!</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       9. Hardware Acceleration Compatibility Matrix
+       =================================================================== -->
+  <section class="hardware-section" id="specs">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">System Compatibility</div>
+        <h2 class="section-title">Multi-GPU Hardware Support Matrix</h2>
+        <p class="section-desc">
+          DJI LUT Studio probes your system configuration on launch and assigns the optimal hardware encoder automatically.
+        </p>
+      </div>
+
+      <div class="hardware-table-wrapper">
+        <table class="hardware-table">
+          <thead>
+            <tr>
+              <th>GPU Vendor / Family</th>
+              <th>Encoder Engine</th>
+              <th>Codec Flag</th>
+              <th>10-Bit Color Support</th>
+              <th>Performance Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>NVIDIA GeForce GTX / RTX / Quadro</strong></td>
+              <td>NVIDIA NVENC</td>
+              <td><code class="badge-tag">-c:v hevc_nvenc</code></td>
+              <td><span class="pill pill-green" style="font-size: 0.75rem;">✔ Full 10-bit P010LE</span></td>
+              <td>Ultra-Fast (Up to 10x real-time on RTX 3070+)</td>
+            </tr>
+            <tr>
+              <td><strong>AMD Radeon RX / Vega / RDNA</strong></td>
+              <td>AMD AMF</td>
+              <td><code class="badge-tag">-c:v hevc_amf</code></td>
+              <td><span class="pill pill-green" style="font-size: 0.75rem;">✔ Full 10-bit VCN</span></td>
+              <td>Hardware Accelerated native AMD pipeline</td>
+            </tr>
+            <tr>
+              <td><strong>Intel Arc & Core i5 / i7 / i9 (Iris Xe)</strong></td>
+              <td>Intel QuickSync Video</td>
+              <td><code class="badge-tag">-c:v hevc_qsv</code></td>
+              <td><span class="pill pill-green" style="font-size: 0.75rem;">✔ Full 10-bit QSV</span></td>
+              <td>Hardware Accelerated QuickSync pipeline</td>
+            </tr>
+            <tr>
+              <td><strong>Any PC (Universal Fallback)</strong></td>
+              <td>Multi-Core CPU</td>
+              <td><code class="badge-tag">-c:v libx265</code></td>
+              <td><span class="pill pill-green" style="font-size: 0.75rem;">✔ Full 10-bit yuv420p10le</span></td>
+              <td>Pruned multi-threaded CPU software rendering</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       10. Frequently Asked Questions
+       =================================================================== -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-subtitle">Got Questions?</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-desc">
+          Everything you need to know about installation, compatibility, and workflow.
+        </p>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4 class="faq-q">Do I need DaVinci Resolve or Premiere Pro?</h4>
+          <p class="faq-a">
+            No! DJI LUT Studio is a completely standalone application. It handles ingestion, telemetry reading, stabilization, 3D LUT tetrahedral interpolation, and hardware-accelerated video export independently.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h4 class="faq-q">Do I need WSL, Ubuntu, or Python installed?</h4>
+          <p class="faq-a">
+            No. Starting in version 2.0.0, the Windows installer bundles the native desktop executable, static multi-GPU FFmpeg binaries, and all 49 LUTs. Simply download the installer and run it.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h4 class="faq-q">Can I use my own custom .cube LUTs?</h4>
+          <p class="faq-a">
+            Yes! In the desktop interface, simply click the <strong>Browse</strong> button next to the "Custom LUT" field to load any third-party 3D LUT (.cube file) from your disk.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h4 class="faq-q">How does Gyroflow stabilization work?</h4>
+          <p class="faq-a">
+            Drones like the DJI Avata, Avata 2, O3, O4 Air Unit, and Osmo Action cameras embed raw gyroscope data (<code class="badge-tag">djmd</code>) inside video files. DJI LUT Studio bridges with Gyroflow to stabilize footage using real telemetry before applying color grading.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h4 class="faq-q">What happens if RockSteady or HorizonSteady was turned ON?</h4>
+          <p class="faq-a">
+            If in-camera RockSteady (<code class="badge-tag">EIS:RS</code>) was enabled while shooting, raw gyro telemetry was suppressed by the camera firmware. DJI LUT Studio detects this automatically, shows an informative amber advisory banner, and disables the Gyroflow checkbox to prevent failed passes.
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h4 class="faq-q">Is DJI LUT Studio free and open source?</h4>
+          <p class="faq-a">
+            Yes, the application is licensed under the permissive MIT open-source license. The code is publicly available on GitHub for the creator community to inspect, customize, and extend.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       11. Footer
+       =================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <a href="#" class="brand">
+          <img src="assets/images/logo.png" alt="DJI LUT Studio Logo" class="brand-logo" style="width: 32px; height: 32px;">
+          <span class="brand-text" style="font-size: 1rem;">DJI LUT Studio</span>
+        </a>
+
+        <div style="display: flex; gap: 20px; font-size: 0.85rem;">
+          <a href="#comparison">Comparison</a>
+          <a href="#screenshots">Screenshots</a>
+          <a href="#features">Features</a>
+          <a href="#catalog">LUTs</a>
+          <a href="#download">Download Installer</a>
+          <a href="https://github.com/gal756/LUT-adder" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <div class="footer-legal">
+        <p>
+          <strong>Disclaimer:</strong> DJI LUT Studio is an independent open-source project and is not affiliated with, endorsed by, or sponsored by SZ DJI Technology Co., Ltd. DJI, D-Log, D-Log M, RockSteady, HorizonSteady, Avata, Mavic, Osmo, and Zenmuse are registered trademarks of SZ DJI Technology Co., Ltd. Official 3D LUT color conversion matrices are property of their respective owners.
+        </p>
+        <p style="margin-top: 8px;">
+          Hardware video encoding is powered by static standalone builds of <a href="https://ffmpeg.org/" target="_blank" rel="noopener">FFmpeg</a> (licensed under LGPL/GPL). Video stabilization utilizes the open-source <a href="https://gyroflow.xyz/" target="_blank" rel="noopener">Gyroflow</a> engine.
+        </p>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2026 <strong>DJI LUT Studio Community</strong> &bull; Released under the <a href="https://github.com/gal756/LUT-adder/blob/master/LICENSE" target="_blank" rel="noopener">MIT License</a>.
+        </div>
+        <div>
+          Created with care by <a href="https://github.com/gal756" target="_blank" rel="noopener">gal756</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

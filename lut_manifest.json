@@ -382,10 +382,42 @@
           ]
         },
         {
-          "id": "osmo_360_nano_lito",
-          "name": "DJI Osmo 360 / Nano / Lito",
+          "id": "lito",
+          "name": "DJI Lito / Lito X1",
           "default_profile": "D-Log M",
-          "filename_patterns": ["OSMO360", "NANO", "LITO"],
+          "filename_patterns": ["LITO", "LITO_X1", "LITOX1"],
+          "luts": [
+            {
+              "id": "lito_x1_dlogm",
+              "name": "Official DJI Lito X1 D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Lito_X1_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official conversion LUT for DJI Lito series compact cameras."
+            }
+          ]
+        },
+        {
+          "id": "osmo_nano",
+          "name": "DJI Osmo Nano",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["NANO", "OSMO_NANO"],
+          "luts": [
+            {
+              "id": "osmo_nano_dlogm",
+              "name": "Official Osmo Nano D-Log M to Rec.709",
+              "type": "technical",
+              "file": "action_pocket/DJI_Osmo_Nano_D-Log_M_to_Rec709.cube",
+              "recommended": true,
+              "description": "Official Osmo Nano ultralight wearable conversion."
+            }
+          ]
+        },
+        {
+          "id": "osmo_360",
+          "name": "DJI Osmo 360",
+          "default_profile": "D-Log M",
+          "filename_patterns": ["OSMO360", "OSMO_360"],
           "luts": [
             {
               "id": "osmo_360_dlogm",
@@ -394,22 +426,6 @@
               "file": "action_pocket/DJI_Osmo_360_D-Log_M_to_Rec709.cube",
               "recommended": true,
               "description": "Official 360 panoramic conversion profile."
-            },
-            {
-              "id": "osmo_nano_dlogm",
-              "name": "Official Osmo Nano D-Log M to Rec.709",
-              "type": "technical",
-              "file": "action_pocket/DJI_Osmo_Nano_D-Log_M_to_Rec709.cube",
-              "recommended": false,
-              "description": "Official Osmo Nano ultralight wearable conversion."
-            },
-            {
-              "id": "lito_x1_dlogm",
-              "name": "Official Lito X1 D-Log M to Rec.709",
-              "type": "technical",
-              "file": "action_pocket/DJI_Lito_X1_D-Log_M_to_Rec709.cube",
-              "recommended": false,
-              "description": "Official Lito series conversion LUT."
             }
           ]
         }

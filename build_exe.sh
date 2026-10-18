@@ -16,9 +16,11 @@ fi
 
 WIN_SRC=$(wslpath -w "$DIR/src/DJI_LUT_Studio.cs")
 WIN_OUT=$(wslpath -w "$DIR/DJI_LUT_Studio.exe")
+WIN_ICO=$(wslpath -w "$DIR/app.ico")
 
-echo "Compiling modern WPF native Windows GUI executable..."
+echo "Compiling modern WPF native Windows GUI executable with embedded icon..."
 "$CSC" /target:winexe /optimize+ \
+    /win32icon:"$WIN_ICO" \
     /r:"$WPF_DIR\PresentationFramework.dll" \
     /r:"$WPF_DIR\PresentationCore.dll" \
     /r:"$WPF_DIR\WindowsBase.dll" \

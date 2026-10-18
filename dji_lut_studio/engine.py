@@ -45,21 +45,293 @@ FFMPEG = find_binary("ffmpeg")
 FFPROBE = find_binary("ffprobe")
 
 
+def detect_hardware_encoder() -> str:
+    """
+    Detects hardware encoder availability across GPU vendors:
+    Returns 'nvenc' (NVIDIA), 'amf' (AMD), 'qsv' (Intel), or 'cpu' (Universal Fallback).
+    """
+    for enc, tag in [("hevc_nvenc", "nvenc"), ("hevc_amf", "amf"), ("hevc_qsv", "qsv")]:
+        try:
+            proc = subprocess.run(
+                [
+                    FFMPEG, "-hide_banner", "-f", "lavfi", "-i", "color=c=black:s=256x256:d=0.1",
+                    "-c:v", enc, "-f", "null", "-"
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5
+            )
+            if proc.returncode == 0:
+                return tag
+        except Exception:
+            continue
+    return "cpu"
+
+
 def check_nvenc_available() -> bool:
     """Verifies whether NVIDIA NVENC hevc_nvenc is available and functional."""
+    return detect_hardware_encoder() == "nvenc"
+
+
+def to_windows_path(path: Path) -> str:
+    """Converts a local or WSL path to a Windows path for Windows executables."""
+    p_str = str(path.resolve())
+    m = re.match(r"^/mnt/([a-zA-Z])/(.*)", p_str)
+    if m:
+        drive = m.group(1).upper()
+        rest = m.group(2).replace("/", "\\")
+        return f"{drive}:\\{rest}"
     try:
-        proc = subprocess.run(
-            [
-                FFMPEG, "-hide_banner", "-f", "lavfi", "-i", "color=c=black:s=256x256:d=0.1",
-                "-c:v", "hevc_nvenc", "-f", "null", "-"
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=5
-        )
-        return proc.returncode == 0
+        res = subprocess.run(["wslpath", "-w", p_str], stdout=subprocess.PIPE, text=True, check=True)
+        return res.stdout.strip()
     except Exception:
-        return False
+        return p_str
+
+
+def find_gyroflow_binary() -> Optional[str]:
+    """
+    Finds Gyroflow executable in system PATH, WinGet package directory,
+    Program Files, or local user directories across WSL and Windows.
+    """
+    import glob
+    custom = os.environ.get("GYROFLOW_BIN")
+    if custom and Path(custom).exists():
+        return custom
+
+    # System PATH
+    for name in ["gyroflow", "Gyroflow", "Gyroflow.exe"]:
+        w = shutil.which(name)
+        if w:
+            try:
+                if subprocess.run([w, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2).returncode == 0:
+                    return w
+            except Exception:
+                pass
+
+    # Windows WinGet packages (accessible via WSL /mnt/c or native Windows)
+    winget_matches = glob.glob("/mnt/c/Users/*/AppData/Local/Microsoft/WinGet/Packages/Gyroflow.Gyroflow_*/Gyroflow.exe")
+    if winget_matches:
+        return winget_matches[0]
+
+    # Windows common paths from WSL
+    common_win = [
+        "/mnt/c/Program Files/Gyroflow/Gyroflow.exe",
+        "/mnt/c/Program Files (x86)/Gyroflow/Gyroflow.exe",
+    ]
+    for p in common_win:
+        if os.path.isfile(p):
+            return p
+
+    appdata_matches = glob.glob("/mnt/c/Users/*/AppData/Local/Gyroflow/Gyroflow.exe")
+    if appdata_matches:
+        return appdata_matches[0]
+
+    # Native Windows environment variables (if running directly on Windows)
+    win_local = os.environ.get("LOCALAPPDATA")
+    if win_local:
+        winget_win = glob.glob(os.path.join(win_local, "Microsoft", "WinGet", "Packages", "Gyroflow.Gyroflow_*", "Gyroflow.exe"))
+        if winget_win:
+            return winget_win[0]
+        p = os.path.join(win_local, "Gyroflow", "Gyroflow.exe")
+        if os.path.isfile(p):
+            return p
+
+    win_prog = os.environ.get("ProgramFiles")
+    if win_prog:
+        p = os.path.join(win_prog, "Gyroflow", "Gyroflow.exe")
+        if os.path.isfile(p):
+            return p
+
+    # Linux local paths
+    linux_paths = [
+        str(Path.home() / ".local" / "bin" / "gyroflow"),
+        str(Path.home() / ".local" / "opt" / "gyroflow" / "Gyroflow" / "gyroflow"),
+        "/usr/local/bin/gyroflow",
+        "/usr/bin/gyroflow",
+        "/opt/gyroflow/gyroflow",
+    ]
+    for p in linux_paths:
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            try:
+                if subprocess.run([p, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2).returncode == 0:
+                    return p
+            except Exception:
+                pass
+
+    return None
+
+
+def is_gyroflow_available() -> bool:
+    """Returns True if Gyroflow is installed and executable."""
+    return find_gyroflow_binary() is not None
+
+
+def launch_gyroflow_gui(video_path: Optional[Path] = None) -> Tuple[bool, Optional[str]]:
+    """
+    Launches the Gyroflow desktop GUI on the host, optionally loading a video file.
+    Returns (success, error_message).
+    """
+    bin_path = find_gyroflow_binary()
+    if not bin_path:
+        return False, "Gyroflow executable not found. Please install Gyroflow."
+
+    try:
+        if bin_path.endswith(".exe") or "/mnt/c/" in bin_path:
+            win_bin = to_windows_path(Path(bin_path))
+            if video_path and video_path.exists() and video_path.is_file():
+                win_video = to_windows_path(video_path)
+                ps = f"Start-Process -FilePath '{win_bin}' -ArgumentList @('--open', '{win_video}')"
+            else:
+                ps = f"Start-Process -FilePath '{win_bin}'"
+            subprocess.Popen(["powershell.exe", "-NoProfile", "-Command", ps], stdin=subprocess.DEVNULL)
+        else:
+            cmd = [bin_path]
+            if video_path and video_path.exists() and video_path.is_file():
+                cmd.extend(["--open", str(video_path)])
+            subprocess.Popen(cmd, stdin=subprocess.DEVNULL)
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def stabilize_video_gyroflow(
+    video_path: Path,
+    output_path: Optional[Path] = None,
+    preset: Optional[str] = None,
+    rendering_device: str = "nvidia",
+    overwrite: bool = True,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None
+) -> Tuple[bool, Optional[Path], Optional[str]]:
+    """
+    Stabilizes video using Gyroflow and its embedded gyroscope motion data.
+    Returns (success, stabilized_file_path, error_message).
+    """
+    if not video_path.exists():
+        return False, None, f"Input video not found: {video_path}"
+
+    bin_path = find_gyroflow_binary()
+    if not bin_path:
+        return False, None, "Gyroflow executable not found. Ensure Gyroflow is installed."
+
+    expected_out = video_path.parent / f"{video_path.stem}_stabilized.mp4"
+    if expected_out.exists() and overwrite:
+        try:
+            expected_out.unlink()
+        except Exception:
+            pass
+
+    prog_regex = re.compile(r"Rendering progress:\s*(\d+)/(\d+)\s+frames\s+\((\d+(?:\.\d+)?)%\)(?:\s+ETA\s+([\d\.]+s))?")
+    done_regex = re.compile(r"Rendering completed:\s*(.+)")
+
+    # Auto-detect Gyroflow GPU rendering backend (NVIDIA, AMD, Intel, CPU)
+    if rendering_device in ["nvidia", "auto", None]:
+        hw = detect_hardware_encoder()
+        if hw == "nvenc":
+            rendering_device = "nvidia"
+        elif hw == "amf":
+            rendering_device = "amd"
+        elif hw == "qsv":
+            rendering_device = "intel"
+        else:
+            rendering_device = "cpu"
+
+    if is_windows_bin:
+        win_bin = to_windows_path(Path(bin_path))
+        win_video = to_windows_path(video_path)
+        args_ps = [f"'{win_video}'"]
+        if overwrite:
+            args_ps.append("-f")
+        args_ps.append("--stdout-progress")
+        if rendering_device:
+            args_ps.extend(["-r", rendering_device])
+        args_ps.extend(["-p", f'"{out_params}"'])
+        if preset:
+            win_preset = to_windows_path(Path(preset)) if Path(preset).exists() else preset
+            args_ps.extend(["--preset", f"'{win_preset}'"])
+
+        cmd_args_str = " ".join(args_ps)
+        ps_cmd = f"& '{win_bin}' {cmd_args_str} 2>&1; exit $LASTEXITCODE"
+        cmd = ["powershell.exe", "-NoProfile", "-Command", ps_cmd]
+    else:
+        cmd = [bin_path, str(video_path), "--stdout-progress"]
+        if overwrite:
+            cmd.append("-f")
+        if rendering_device:
+            cmd.extend(["-r", rendering_device])
+        cmd.extend(["-p", out_params])
+        if preset:
+            cmd.extend(["--preset", str(preset)])
+
+    start_t = time.time()
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            stdin=subprocess.DEVNULL
+        )
+
+        completed_name = None
+        while True:
+            line = proc.stdout.readline()
+            if not line and proc.poll() is not None:
+                break
+            if not line:
+                continue
+
+            m = prog_regex.search(line)
+            if m:
+                cur_f = int(m.group(1))
+                tot_f = int(m.group(2))
+                pct = float(m.group(3))
+                eta_str = m.group(4) or ""
+                if progress_callback:
+                    progress_callback({
+                        "video": video_path.name,
+                        "status": "stabilizing",
+                        "stage": "gyroflow",
+                        "percentage": round(pct, 1),
+                        "frames": f"{cur_f}/{tot_f}",
+                        "eta": eta_str,
+                        "elapsed_seconds": int(time.time() - start_t)
+                    })
+
+            m_done = done_regex.search(line)
+            if m_done:
+                completed_name = m_done.group(1).strip()
+
+        proc.wait()
+        if proc.returncode != 0:
+            return False, None, f"Gyroflow exited with code {proc.returncode}"
+
+    except Exception as e:
+        return False, None, str(e)
+
+    target_out = expected_out
+    if not target_out.exists() and completed_name:
+        candidate = video_path.parent / completed_name
+        if candidate.exists():
+            target_out = candidate
+
+    if not target_out.exists() or target_out.stat().st_size == 0:
+        return False, None, f"Gyroflow stabilization completed but output file not found at {target_out}"
+
+    if output_path and output_path.resolve() != target_out.resolve():
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(target_out), str(output_path))
+        target_out = output_path
+
+    if progress_callback:
+        progress_callback({
+            "video": video_path.name,
+            "status": "stabilized",
+            "percentage": 100.0,
+            "elapsed_seconds": int(time.time() - start_t)
+        })
+
+    return True, target_out, None
 
 
 def get_video_info(video_path: Path) -> Dict[str, Any]:
@@ -241,10 +513,13 @@ def grade_video(
     sharpen: bool = False,
     scale: str = "keep",
     generate_preview: bool = True,
+    stabilize_gyroflow: bool = False,
+    gyroflow_preset: Optional[str] = None,
     progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None
 ) -> Tuple[bool, Optional[str]]:
     """
     Grades a single video file applying the selected LUT and look options.
+    If stabilize_gyroflow is True, stabilizes camera motion using Gyroflow first.
     Returns (success, error_message).
     """
     if not video_path.exists():
@@ -253,7 +528,35 @@ def grade_video(
     if not primary_lut.exists():
         return False, f"Primary LUT file not found: {primary_lut}"
 
-    info = get_video_info(video_path)
+    actual_video_path = video_path
+
+    if stabilize_gyroflow:
+        if progress_callback:
+            progress_callback({
+                "video": video_path.name,
+                "status": "stabilizing",
+                "percentage": 0.0,
+                "stage": "gyroflow",
+                "message": "Stabilizing camera motion with Gyroflow..."
+            })
+        ok_stab, stab_file, stab_err = stabilize_video_gyroflow(
+            video_path=video_path,
+            preset=gyroflow_preset,
+            progress_callback=progress_callback
+        )
+        if not ok_stab or not stab_file or not stab_file.exists():
+            return False, f"Gyroflow stabilization failed: {stab_err}"
+        actual_video_path = stab_file
+        if progress_callback:
+            progress_callback({
+                "video": video_path.name,
+                "status": "stabilized",
+                "stage": "gyroflow_done",
+                "percentage": 100.0,
+                "message": f"Gyroflow stabilization complete: {stab_file.name}. Starting 3D LUT grading..."
+            })
+
+    info = get_video_info(actual_video_path)
     duration = info.get("duration", 0)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -263,13 +566,13 @@ def grade_video(
         primary_lut, secondary_lut=secondary_lut, look_style=look_style, sharpen=sharpen, scale=scale
     )
 
-    # Encoder settings
-    has_nvenc = check_nvenc_available() if use_nvenc else False
+    # Hardware encoder settings across GPU vendors (NVIDIA NVENC, AMD AMF, Intel QSV, CPU)
+    hw_type = detect_hardware_encoder() if use_nvenc else "cpu"
 
     if codec_choice == "prores":
         c_v = ["-c:v", "prores_ks", "-profile:v", "3", "-pix_fmt", "yuv422p10le"]
     elif codec_choice == "h264":
-        if has_nvenc:
+        if hw_type == "nvenc":
             c_v = [
                 "-c:v", "h264_nvenc",
                 "-preset", "p6",
@@ -280,10 +583,14 @@ def grade_video(
                 "-spatial-aq", "1",
                 "-temporal-aq", "1"
             ]
+        elif hw_type == "amf":
+            c_v = ["-c:v", "h264_amf", "-quality", "quality", "-rc", "cbr"]
+        elif hw_type == "qsv":
+            c_v = ["-c:v", "h264_qsv", "-preset", "slow", "-global_quality", str(cq)]
         else:
             c_v = ["-c:v", "libx264", "-crf", str(cq), "-preset", "slow"]
     else:  # hevc (default)
-        if has_nvenc:
+        if hw_type == "nvenc":
             c_v = [
                 "-c:v", "hevc_nvenc",
                 "-preset", "p6",
@@ -294,6 +601,10 @@ def grade_video(
                 "-spatial-aq", "1",
                 "-temporal-aq", "1"
             ]
+        elif hw_type == "amf":
+            c_v = ["-c:v", "hevc_amf", "-quality", "quality", "-rc", "cbr"]
+        elif hw_type == "qsv":
+            c_v = ["-c:v", "hevc_qsv", "-preset", "slow", "-global_quality", str(cq)]
         else:
             c_v = ["-c:v", "libx265", "-crf", str(cq), "-preset", "medium"]
 
@@ -302,7 +613,7 @@ def grade_video(
 
     cmd = [
         FFMPEG, "-y",
-        "-i", str(video_path),
+        "-i", str(actual_video_path),
         "-vf", vf,
         *c_v,
         *c_a,
@@ -373,7 +684,7 @@ def grade_video(
     if generate_preview:
         preview_path = output_path.parent / f"{output_path.stem}_preview.jpg"
         generate_preview_snapshot(
-            video_path, primary_lut, preview_path,
+            actual_video_path, primary_lut, preview_path,
             secondary_lut=secondary_lut, look_style=look_style, sharpen=sharpen
         )
 

@@ -12,9 +12,15 @@ preview_cache/
 *.mkv
 *.jpg
 *.jpeg
+!docs/assets/images/*
+!assets/images/*
 
 # IDE & OS
 .DS_Store
 Thumbs.db
+Screenshot*.png
 .vscode/
 .idea/
+
+# Distribution build staging
+dist/

@@ -30,9 +30,10 @@ echo   [3] Interactive Terminal Grading Wizard
 echo   [4] Start Folder Watcher Mode (Auto-grades D:\dji\incoming)
 echo   [5] View All 49 DJI LUTs & Supported Devices
 echo   [6] Grade all clips in D:\dji (Auto-Detect)
-echo   [7] Exit
+echo   [7] Launch Gyroflow Video Stabilization (Standalone GUI)
+echo   [8] Exit
 echo.
-set /p MENU_CHOICE="Enter choice (1-7) [Default: 1]: "
+set /p MENU_CHOICE="Enter choice (1-8) [Default: 1]: "
 if "%MENU_CHOICE%"=="" set MENU_CHOICE=1
 
 if "%MENU_CHOICE%"=="1" goto LAUNCH_WPF_GUI
@@ -41,7 +42,16 @@ if "%MENU_CHOICE%"=="3" goto LAUNCH_CLI
 if "%MENU_CHOICE%"=="4" goto LAUNCH_WATCHER
 if "%MENU_CHOICE%"=="5" goto LIST_LUTS
 if "%MENU_CHOICE%"=="6" goto BATCH_D_DJI
-if "%MENU_CHOICE%"=="7" exit /b
+if "%MENU_CHOICE%"=="7" goto LAUNCH_GYROFLOW
+if "%MENU_CHOICE%"=="8" exit /b
+goto MENU
+
+:LAUNCH_GYROFLOW
+cls
+echo [INFO] Launching Gyroflow Desktop GUI...
+%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py --open-gyroflow
+echo.
+pause
 goto MENU
 
 :LAUNCH_WPF_GUI
@@ -116,16 +126,24 @@ echo   [2] Natural Rec.709 (100%% Official DJI Baseline Color)
 echo   [3] Cinematic Film  (Filmic 35mm Curve & Deep Rich Shadows)
 echo   [4] Golden Hour     (Warm Golden-Hour Sunset Glow)
 echo   [5] Quick 1080p     (Fast 1080p Proxy for WhatsApp / Discord / Quick share)
+echo   [6] Gyroflow + Pop  (Stabilize footage with Gyroflow first, then grade)
 echo.
-echo Auto-starting [1] Vibrant Pop in 5 seconds... (Press 1-5 to choose now)
+echo Auto-starting [1] Vibrant Pop in 5 seconds... (Press 1-6 to choose now)
 echo.
 
-choice /c 12345 /d 1 /t 5 /m "Select option"
+choice /c 123456 /d 1 /t 5 /m "Select option"
+if errorlevel 6 goto LOOK_GYROFLOW
 if errorlevel 5 goto LOOK_1080P
 if errorlevel 4 goto LOOK_GOLDEN
 if errorlevel 3 goto LOOK_CINEMATIC
 if errorlevel 2 goto LOOK_NATURAL
 if errorlevel 1 goto LOOK_VIBRANT
+
+:LOOK_GYROFLOW
+cls
+echo [INFO] Processing with GYROFLOW STABILIZATION + VIBRANT POP...
+%WSL_RUN% -e /usr/bin/python3 /home/gal756/LUT-adder/dji_lut_studio/cli.py -g --look vibrant --sharpen -p %*
+goto FINISHED
 
 :LOOK_VIBRANT
 cls

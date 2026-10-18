@@ -158,9 +158,13 @@ if ($LASTEXITCODE -eq 0) {
                         </StackPanel>
 
                         <!-- Options Checkboxes -->
-                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Margin="0,18,0,0">
-                            <CheckBox x:Name="ChkSharpen" Content="Apply Fine Foliage Unsharp Mask" Foreground="#F0F6FC" IsChecked="True" Margin="0,0,0,6"/>
-                            <CheckBox x:Name="ChkPreview" Content="Generate Side-by-Side Comparison JPEG" Foreground="#F0F6FC" IsChecked="True"/>
+                        <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Margin="0,14,0,0">
+                            <CheckBox x:Name="ChkSharpen" Content="Apply Fine Foliage Unsharp Mask" Foreground="#F0F6FC" IsChecked="True" Margin="0,0,0,4"/>
+                            <CheckBox x:Name="ChkPreview" Content="Generate Side-by-Side Comparison JPEG" Foreground="#F0F6FC" IsChecked="True" Margin="0,0,0,6"/>
+                            <DockPanel Margin="0,2,0,0">
+                                <CheckBox x:Name="ChkGyroflow" Content="⚡ Gyroflow Stabilization" Foreground="#00F2A9" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button x:Name="BtnOpenGyroflow" Content="🎯 Open in Gyroflow" Background="#21262D" Foreground="#F0F6FC" BorderBrush="#30363D" Padding="8,2" FontSize="11" Margin="8,0,0,0"/>
+                            </DockPanel>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -209,6 +213,8 @@ $cmbCodec        = $window.FindName("CmbCodec")
 $cmbScale        = $window.FindName("CmbScale")
 $chkSharpen      = $window.FindName("ChkSharpen")
 $chkPreview      = $window.FindName("ChkPreview")
+$chkGyroflow     = $window.FindName("ChkGyroflow")
+$btnOpenGyroflow = $window.FindName("BtnOpenGyroflow")
 $txtLog          = $window.FindName("TxtLog")
 $prgBar          = $window.FindName("PrgBar")
 $lblStatus       = $window.FindName("LblStatus")
@@ -229,10 +235,14 @@ $deviceData = @{
     "DJI Osmo Action 4"                  = @("oa4_dlogm|Official Action 4 D-Log M to Rec.709", "oa4_ice|Action Look: Ice Pro", "oa4_nature|Action Look: Nature Pro", "oa4_forest|Action Look: Forest Pro")
     "DJI Osmo Action 5 Pro"              = @("oa5p_dlogm|Official Action 5 Pro D-Log M to Rec.709", "oa5p_mei|Master Look: Mei (Plum)", "oa5p_ju|Master Look: Ju (Chrysanthemum)", "oa5p_zhu|Master Look: Zhu (Bamboo)", "oa5p_lan|Master Look: Lan (Orchid)")
     "DJI Osmo Action 6"                  = @("oa6_dlogm|Official Action 6 D-Log M to Rec.709")
-    "DJI Osmo 360 / Nano / Lito"         = @("osmo_360_dlogm|Official Osmo 360 D-Log M", "osmo_nano_dlogm|Official Osmo Nano D-Log M", "lito_x1_dlogm|Official Lito X1 D-Log M")
+    "DJI Lito / Lito X1"                 = @("lito_x1_dlogm|Official DJI Lito X1 D-Log M to Rec.709")
+    "DJI Osmo Nano"                      = @("osmo_nano_dlogm|Official DJI Osmo Nano D-Log M to Rec.709")
+    "DJI Osmo 360"                       = @("osmo_360_dlogm|Official DJI Osmo 360 Panoramic D-Log M")
+    "DJI Flip"                           = @("flip_dlogm_rec709|Official DJI Flip D-Log M to Rec.709")
+    "DJI Neo / Generic D-Log M"          = @("generic_dlogm_rec709|Official Universal DJI Neo / D-Log M to Rec.709")
     "DJI Zenmuse X7 / Ronin 4D / Inspire"= @("x7_dlog_rec709|Official Cinema D-Log to Rec.709", "x7_linear_dlog|Official Linear to D-Log")
-    "DJI Phantom 4 / Phantom 4 Pro"      = @("p4_dlog_rec709|Official Phantom 4 D-Log to Rec.709", "p4_dlog_srgb|Official Phantom 4 D-Log to sRGB")
-    "DJI Generic / Universal D-Log M"    = @("generic_dlogm_rec709|Official Universal DJI D-Log M to Rec.709")
+    "DJI Phantom 4 / Phantom 4 Pro"      = @("p4_dlog_rec709|Official Phantom 4 D-Log to Rec.709", "p4_dlog_srgb|Official Phantom 4 D-Log to sRGB Improv")
+    "Universal 3D Creative Looks"        = @("look_vibrant|Master Look: Vibrant Pop", "look_cinematic|Master Look: Cinematic 35mm", "look_golden|Master Look: Golden Hour", "look_teal_orange|Master Look: Teal & Orange", "look_commercial|Master Look: Clean Commercial", "look_noir|Master Look: Moody Noir B&W", "look_dcinelike|Master Look: D-Cinelike Natural Booster")
 }
 
 foreach ($dev in $deviceData.Keys | Sort-Object) {
@@ -313,6 +323,41 @@ $btnOpenFolder.Add_Click({
     }
 })
 
+# Open in Gyroflow
+$btnOpenGyroflow.Add_Click({
+    $inPath = $txtInputPath.Text.Trim('"')
+    $gyroExe = $null
+    $wingetDir = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages"
+    if (Test-Path $wingetDir) {
+        $g = Get-ChildItem -Path $wingetDir -Filter "Gyroflow.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($g) { $gyroExe = $g.FullName }
+    }
+    if (-not $gyroExe) {
+        $common = @(
+            (Join-Path $env:LOCALAPPDATA "Gyroflow\Gyroflow.exe"),
+            "C:\Program Files\Gyroflow\Gyroflow.exe",
+            "C:\Program Files (x86)\Gyroflow\Gyroflow.exe"
+        )
+        foreach ($c in $common) {
+            if (Test-Path $c) { $gyroExe = $c; break }
+        }
+    }
+    if (-not $gyroExe) {
+        $res = [System.Windows.MessageBox]::Show(
+            "Gyroflow was not detected on your system.`n`nWould you like to install Gyroflow now via winget?",
+            "Install Gyroflow", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+        if ($res -eq [System.Windows.MessageBoxResult]::Yes) {
+            Start-Process "cmd.exe" "/c winget install --id Gyroflow.Gyroflow --accept-source-agreements --accept-package-agreements"
+        }
+        return
+    }
+    if ($inPath -and (Test-Path $inPath -PathType Leaf)) {
+        Start-Process $gyroExe -ArgumentList @('--open', $inPath)
+    } else {
+        Start-Process $gyroExe
+    }
+})
+
 # Start Grading Button Click
 $btnStartGrade.Add_Click({
     $targetPath = $txtInputPath.Text.Trim('"')
@@ -336,16 +381,18 @@ $btnStartGrade.Add_Click({
 
     $sharpenFlag = if ($chkSharpen.IsChecked) { "--sharpen" } else { "" }
     $previewFlag = if ($chkPreview.IsChecked) { "-p" } else { "" }
+    $gyroFlag = if ($chkGyroflow.IsChecked) { "-g" } else { "" }
 
     $btnStartGrade.IsEnabled = $false
-    $lblStatus.Text = "Grading with NVIDIA RTX NVENC in progress..."
+    $lblStatus.Text = if ($chkGyroflow.IsChecked) { "Stabilizing with Gyroflow & grading..." } else { "Grading with NVIDIA RTX NVENC in progress..." }
     $prgBar.IsIndeterminate = $true
     $txtLog.Text = "[INFO] Launching DJI LUT Studio pipeline...`n[INFO] Target: $targetPath`n[INFO] LUT: $lutId`n[INFO] Look: $look`n"
+    if ($chkGyroflow.IsChecked) { $txtLog.Text += "[INFO] Gyroflow Stabilization: ENABLED`n" }
 
     $wslScriptPath = "/home/gal756/LUT-adder/pipeline.py"
-    $cmdArgs = "-e /usr/bin/python3 $wslScriptPath `"$targetPath`" --look $look -c $codec --scale $scale $sharpenFlag $previewFlag"
+    $cmdArgs = "-e /usr/bin/python3 $wslScriptPath `"$targetPath`" --look $look -c $codec --scale $scale $sharpenFlag $previewFlag $gyroFlag"
 
-    Start-Process -FilePath "wsl.exe" -ArgumentList "-d", $wslDistro, "-e", "/usr/bin/python3", "/home/gal756/LUT-adder/dji_lut_studio/cli.py", "`"$targetPath`"", "-l", $lutId, "--look", $look, "-c", $codec, "--scale", $scale, $sharpenFlag, $previewFlag -Wait
+    Start-Process -FilePath "wsl.exe" -ArgumentList "-d", $wslDistro, "-e", "/usr/bin/python3", "/home/gal756/LUT-adder/dji_lut_studio/cli.py", "`"$targetPath`"", "-l", $lutId, "--look", $look, "-c", $codec, "--scale", $scale, $sharpenFlag, $previewFlag, $gyroFlag -Wait
 
     $prgBar.IsIndeterminate = $false
     $prgBar.Value = 100

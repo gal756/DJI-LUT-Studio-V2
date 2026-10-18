@@ -25,6 +25,8 @@ try:
         get_video_info,
         check_nvenc_available,
         generate_preview_snapshot,
+        is_gyroflow_available,
+        launch_gyroflow_gui,
         VIDEO_EXTENSIONS,
     )
 except (ImportError, ValueError):
@@ -34,6 +36,8 @@ except (ImportError, ValueError):
         get_video_info,
         check_nvenc_available,
         generate_preview_snapshot,
+        is_gyroflow_available,
+        launch_gyroflow_gui,
         VIDEO_EXTENSIONS,
     )
 
@@ -95,6 +99,7 @@ class StudioHTTPHandler(BaseHTTPRequestHandler):
             self.end_json({
                 "nvenc_available": has_gpu,
                 "gpu_name": "NVIDIA RTX 3070" if has_gpu else "CPU Encoding",
+                "gyroflow_available": is_gyroflow_available(),
                 "version": "2.0.0",
                 "lut_count": len(manifest.get_all_luts()),
                 "device_count": len(manifest.get_all_devices()),
@@ -226,6 +231,16 @@ class StudioHTTPHandler(BaseHTTPRequestHandler):
                 self.end_json({"error": "Failed to generate preview snapshot"}, status=500)
             return
 
+        if path == "/api/gyroflow/open":
+            video_str = payload.get("video_path", "")
+            vpath = to_wsl_path(video_str) if video_str else None
+            ok, err = launch_gyroflow_gui(vpath)
+            if ok:
+                self.end_json({"success": True})
+            else:
+                self.end_json({"error": err or "Failed to launch Gyroflow GUI"}, status=500)
+            return
+
         if path == "/api/grade":
             video_str = payload.get("video_path", "")
             lut_id = payload.get("lut_id", "")
@@ -234,6 +249,7 @@ class StudioHTTPHandler(BaseHTTPRequestHandler):
             cq = int(payload.get("cq", 19))
             scale = payload.get("scale", "keep")
             sharpen = bool(payload.get("sharpen", False))
+            gyroflow = bool(payload.get("gyroflow", False))
 
             if not video_str or not lut_id:
                 self.end_json({"error": "Missing video_path or lut_id"}, status=400)
@@ -243,8 +259,8 @@ class StudioHTTPHandler(BaseHTTPRequestHandler):
             lut_file = manifest.resolve_lut_file(lut_id)
 
             with JOB_LOCK:
-                if CURRENT_JOB.get("status") == "encoding":
-                    self.end_json({"error": "Another grading job is already in progress"}, status=409)
+                if CURRENT_JOB.get("status") in ("encoding", "stabilizing"):
+                    self.end_json({"error": "Another job is already in progress"}, status=409)
                     return
                 CURRENT_JOB["status"] = "starting"
                 CURRENT_JOB["video"] = vpath.name
@@ -270,6 +286,7 @@ class StudioHTTPHandler(BaseHTTPRequestHandler):
                     scale=scale,
                     sharpen=sharpen,
                     generate_preview=True,
+                    stabilize_gyroflow=gyroflow,
                     progress_callback=callback
                 )
 

@@ -21,6 +21,17 @@ import argparse
 import subprocess
 from pathlib import Path
 
+try:
+    from dji_lut_studio.engine import (
+        is_gyroflow_available,
+        launch_gyroflow_gui,
+        stabilize_video_gyroflow,
+    )
+except Exception:
+    stabilize_video_gyroflow = None
+    launch_gyroflow_gui = None
+    is_gyroflow_available = lambda: False
+
 # ANSI colors for terminal
 GREEN = "\033[92m"
 CYAN = "\033[96m"
@@ -382,7 +393,8 @@ def process_path(
     cq: int,
     look: str = "natural",
     sharpen: bool = False,
-    scale: str = "keep"
+    scale: str = "keep",
+    stabilize_gyroflow: bool = False
 ):
     """Processes a single file or directory recursively."""
     if not target_path.exists():
@@ -440,8 +452,17 @@ def process_path(
             skip_count += 1
             continue
 
+        target_video = v_path
+        if stabilize_gyroflow and stabilize_video_gyroflow:
+            print(f"  {CYAN}⚡ Gyroflow Stabilization Active (stabilizing gyro motion...){RESET}")
+            ok_s, s_path, s_err = stabilize_video_gyroflow(v_path)
+            if ok_s and s_path and s_path.exists():
+                target_video = s_path
+            else:
+                print(f"  {RED}Gyroflow notice: {s_err}. Grading original clip.{RESET}")
+
         ok = grade_video(
-            video_path=v_path,
+            video_path=target_video,
             output_path=out_path,
             lut_path=lut_path,
             codec_choice=codec_choice,
@@ -591,8 +612,21 @@ Examples:
     parser.add_argument("-f", "--force", action="store_true", help="Process all videos even if not marked as D-Log M")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files")
     parser.add_argument("-p", "--preview", action="store_true", help="Generate side-by-side comparison JPEG snapshot")
+    parser.add_argument("-g", "--gyroflow", action="store_true", help="Stabilize video using Gyroflow before grading (Avata, O3/O4, Action 4/5)")
+    parser.add_argument("--open-gyroflow", action="store_true", help="Open video directly in Gyroflow Desktop GUI")
 
     args = parser.parse_args()
+
+    if args.open_gyroflow and launch_gyroflow_gui:
+        if args.inputs:
+            for inp in args.inputs:
+                p = to_wsl_path(inp)
+                launch_gyroflow_gui(p)
+                print(f"{GREEN}✔ Launched Gyroflow for: {p.name}{RESET}")
+        else:
+            launch_gyroflow_gui()
+            print(f"{GREEN}✔ Launched Gyroflow Desktop GUI{RESET}")
+        return
 
     # Resolve LUT path
     lut_path = to_wsl_path(args.lut)
@@ -618,6 +652,8 @@ Examples:
     print(f"  {DIM}LUT Model:{RESET}   {lut_path.name}")
     print(f"  {DIM}Look Preset:{RESET} {BOLD}{args.look.upper()}{RESET}" + (" + Sharpen" if args.sharpen else ""))
     print(f"  {DIM}Codec:{RESET}       {args.codec.upper()} (CQ: {args.cq})")
+    if args.gyroflow:
+        print(f"  {DIM}Gyroflow:{RESET}    {GREEN}Enabled (Stabilize with Gyroflow before grading){RESET}")
 
     if args.watch is not None:
         watch_path = to_wsl_path(args.watch)
@@ -651,6 +687,7 @@ Examples:
                 look=args.look,
                 sharpen=args.sharpen,
                 scale=args.scale,
+                stabilize_gyroflow=args.gyroflow,
             )
     else:
         # No arguments given: explain usage or prompt user

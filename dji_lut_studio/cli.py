@@ -22,6 +22,9 @@ try:
         get_video_info,
         check_nvenc_available,
         format_seconds,
+        is_gyroflow_available,
+        launch_gyroflow_gui,
+        stabilize_video_gyroflow,
         VIDEO_EXTENSIONS,
     )
 except (ImportError, ValueError):
@@ -31,6 +34,9 @@ except (ImportError, ValueError):
         get_video_info,
         check_nvenc_available,
         format_seconds,
+        is_gyroflow_available,
+        launch_gyroflow_gui,
+        stabilize_video_gyroflow,
         VIDEO_EXTENSIONS,
     )
 
@@ -59,7 +65,10 @@ def print_banner():
     print(f"{CYAN}       Universal 3D LUT Color Grading Suite for DJI Drones & Cameras {RESET}")
     has_gpu = check_nvenc_available()
     gpu_badge = f"{GREEN}NVIDIA RTX NVENC (10-bit Active){RESET}" if has_gpu else f"{YELLOW}CPU Mode{RESET}"
+    has_gyro = is_gyroflow_available()
+    gyro_badge = f"{GREEN}Detected & Ready{RESET}" if has_gyro else f"{DIM}Not detected{RESET}"
     print(f"       Hardware Acceleration: {gpu_badge}")
+    print(f"       Gyroflow Stabilization: {gyro_badge}")
     print(f"{BOLD}{CYAN}====================================================================={RESET}\n")
 
 
@@ -95,18 +104,19 @@ def interactive_menu():
     print("  [2] Auto-detect Camera & Grade automatically")
     print("  [3] Start Folder Watcher (Auto-grades incoming clips)")
     print("  [4] View all 49 DJI LUTs & Devices")
-    print("  [5] Exit")
+    print("  [5] Open video in Gyroflow Desktop GUI")
+    print("  [6] Exit")
     print()
 
-    choice = input("Enter choice (1-5): ").strip()
+    choice = input("Enter choice (1-6): ").strip()
     if choice == "4":
         list_luts()
         return
-    elif choice == "5":
+    elif choice == "6":
         sys.exit(0)
 
     # Input path
-    path_in = input("\nEnter video path or directory to grade: ").strip()
+    path_in = input("\nEnter video path or directory to process: ").strip()
     if not path_in:
         print("No path specified.")
         return
@@ -114,6 +124,14 @@ def interactive_menu():
     input_path = to_local_path(path_in)
     if not input_path.exists():
         print(f"{RED}Error: Path not found: {input_path}{RESET}")
+        return
+
+    if choice == "5":
+        ok, err = launch_gyroflow_gui(input_path)
+        if ok:
+            print(f"{GREEN}✔ Launched Gyroflow Desktop GUI with: {input_path.name}{RESET}")
+        else:
+            print(f"{RED}Failed to launch Gyroflow: {err}{RESET}")
         return
 
     # Watcher mode
@@ -153,6 +171,9 @@ def interactive_menu():
     look_in = input("Enter choice (1-5, default 1): ").strip() or "1"
     look = look_map.get(look_in, "vibrant")
 
+    stab_in = input("\nEnable Gyroflow camera stabilization? (y/N): ").strip().lower()
+    stabilize = stab_in in ("y", "yes")
+
     process_inputs(
         inputs=[input_path],
         lut_choice=selected_lut_id,
@@ -161,7 +182,8 @@ def interactive_menu():
         cq=19,
         sharpen=True,
         scale="keep",
-        generate_preview=True
+        generate_preview=True,
+        stabilize_gyroflow=stabilize
     )
 
 
@@ -176,7 +198,9 @@ def process_inputs(
     sharpen: bool = False,
     scale: str = "keep",
     generate_preview: bool = True,
-    overwrite: bool = False
+    overwrite: bool = False,
+    stabilize_gyroflow: bool = False,
+    gyroflow_preset: Optional[str] = None
 ):
     """Processes a list of video files or directories."""
     files_to_grade: List[Path] = []
@@ -241,16 +265,46 @@ def process_inputs(
             continue
 
         def cli_progress(d):
+            status = d.get("status", "")
+            stage = d.get("stage", "")
             pct = d.get("percentage", 0)
+            if status == "stabilizing" or stage == "gyroflow":
+                frames = d.get("frames", "")
+                eta = d.get("eta", "")
+                eta_str = f" | ETA: {eta}" if eta else ""
+                frames_str = f" | Frames: {frames}" if frames else ""
+                line = f"⚡ [GYROFLOW STABILIZING] {pct:5.1f}%{frames_str}{eta_str}"
+                if sys.stdout.isatty():
+                    sys.stdout.write(f"\r  {CYAN}{line}{RESET}  ")
+                else:
+                    sys.stdout.write(f"{line}\n")
+                sys.stdout.flush()
+                return
+
+            if status == "stabilized" or stage == "gyroflow_done":
+                line = f"✔ [GYROFLOW DONE] Stabilization complete. Proceeding to 3D LUT grading..."
+                if sys.stdout.isatty():
+                    sys.stdout.write(f"\r  {GREEN}{line}{RESET}\n")
+                else:
+                    sys.stdout.write(f"{line}\n")
+                sys.stdout.flush()
+                return
+
             spd = d.get("speed", "1.0x")
             fps = d.get("fps", 0)
             eta = format_seconds(d.get("eta_seconds", 0))
             bar_len = 30
             filled = int(bar_len * pct / 100.0)
             bar = "█" * filled + "░" * (bar_len - filled)
-            sys.stdout.write(f"\r  [{bar}] {pct:5.1f}% | {fps:4.1f} fps ({spd}) | ETA: {eta}  ")
+            line = f"🎬 [GRADING] {pct:5.1f}% | {fps:4.1f} fps ({spd}) | ETA: {eta}"
+            if sys.stdout.isatty():
+                sys.stdout.write(f"\r  [{bar}] {pct:5.1f}% | {fps:4.1f} fps ({spd}) | ETA: {eta}  ")
+            else:
+                sys.stdout.write(f"{line}\n")
             sys.stdout.flush()
 
+        if stabilize_gyroflow:
+            print(f"  {CYAN}⚡ Gyroflow Stabilization Enabled (analyzing gyro motion...){RESET}")
         print(f"  Applying LUT: {primary_lut_path.name}")
         ok, err = grade_video(
             video_path=video_path,
@@ -262,6 +316,8 @@ def process_inputs(
             sharpen=sharpen,
             scale=scale,
             generate_preview=generate_preview,
+            stabilize_gyroflow=stabilize_gyroflow,
+            gyroflow_preset=gyroflow_preset,
             progress_callback=cli_progress
         )
 
@@ -336,6 +392,9 @@ def main():
     parser.add_argument("-o", "--output", help="Output directory")
     parser.add_argument("-w", "--watch", nargs="?", const="default", help="Watch incoming folder and grade on the fly")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files")
+    parser.add_argument("-g", "--gyroflow", action="store_true", help="Stabilize video using Gyroflow before grading (Avata, O3/O4, Action 4/5)")
+    parser.add_argument("--open-gyroflow", action="store_true", help="Open video directly in Gyroflow Desktop GUI")
+    parser.add_argument("--gyroflow-preset", help="Path to Gyroflow preset file or JSON string")
     parser.add_argument("--list-devices", action="store_true", help="List all supported DJI drones and cameras")
     parser.add_argument("--list-luts", action="store_true", help="List all available LUTs in library")
     parser.add_argument("-i", "--interactive", action="store_true", help="Launch interactive terminal wizard")
@@ -348,6 +407,17 @@ def main():
 
     if args.list_luts:
         list_luts()
+        return
+
+    if args.open_gyroflow:
+        if args.inputs:
+            for inp in args.inputs:
+                p = to_local_path(inp)
+                launch_gyroflow_gui(p)
+                print(f"{GREEN}✔ Launched Gyroflow for: {p.name}{RESET}")
+        else:
+            launch_gyroflow_gui()
+            print(f"{GREEN}✔ Launched Gyroflow Desktop GUI{RESET}")
         return
 
     if args.interactive or (not args.inputs and not args.watch):
@@ -374,7 +444,9 @@ def main():
         sharpen=args.sharpen,
         scale=args.scale,
         generate_preview=args.preview,
-        overwrite=args.overwrite
+        overwrite=args.overwrite,
+        stabilize_gyroflow=args.gyroflow,
+        gyroflow_preset=args.gyroflow_preset
     )
 
 

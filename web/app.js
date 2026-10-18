@@ -38,6 +38,10 @@ const el = {
   cqRange: document.getElementById('cqRange'),
   cqVal: document.getElementById('cqVal'),
   chkSharpen: document.getElementById('chkSharpen'),
+  chkGyroflow: document.getElementById('chkGyroflow'),
+  btnOpenGyroflow: document.getElementById('btnOpenGyroflow'),
+  gyroBadge: document.getElementById('gyroBadge'),
+  gyroText: document.getElementById('gyroText'),
   btnStartGrade: document.getElementById('btnStartGrade'),
   progressPanel: document.getElementById('progressPanel'),
   progVideoName: document.getElementById('progVideoName'),
@@ -91,6 +95,30 @@ function setupEventListeners() {
 
   // Start Grade
   el.btnStartGrade.addEventListener('click', startGrading);
+
+  // Open in Gyroflow
+  if (el.btnOpenGyroflow) {
+    el.btnOpenGyroflow.addEventListener('click', async () => {
+      const videoPath = state.selectedClip ? state.selectedClip.path : el.inputPath.value;
+      if (!videoPath) {
+        alert('Please enter or select a video path first.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/gyroflow/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_path: videoPath }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert(`Gyroflow error: ${data.error}`);
+        }
+      } catch (err) {
+        alert(`Failed to launch Gyroflow: ${err}`);
+      }
+    });
+  }
 }
 
 // Fetch System Info
@@ -104,6 +132,9 @@ async function fetchSystemInfo() {
     } else {
       el.gpuText.textContent = `CPU Mode (${data.gpu_name})`;
       el.gpuBadge.classList.remove('gpu-badge');
+    }
+    if (el.gyroBadge && data.gyroflow_available) {
+      el.gyroBadge.style.display = 'inline-flex';
     }
     el.lutCountText.textContent = `${data.lut_count} 3D LUTs Ready`;
   } catch (err) {
@@ -349,10 +380,11 @@ async function startGrading() {
     cq: parseInt(el.cqRange.value, 10),
     scale: el.selectScale.value,
     sharpen: el.chkSharpen.checked,
+    gyroflow: el.chkGyroflow ? el.chkGyroflow.checked : false,
   };
 
   el.btnStartGrade.disabled = true;
-  el.btnStartGrade.textContent = 'Starting GPU Encoder...';
+  el.btnStartGrade.textContent = el.chkGyroflow && el.chkGyroflow.checked ? 'Stabilizing with Gyroflow...' : 'Starting GPU Encoder...';
 
   try {
     const res = await fetch('/api/grade', {
@@ -383,7 +415,16 @@ function startStatusPolling() {
       const res = await fetch('/api/status');
       const data = await res.json();
 
-      if (data.status === 'encoding') {
+      if (data.status === 'stabilizing') {
+        el.progressPanel.style.display = 'flex';
+        el.progVideoName.textContent = data.video || 'Stabilizing';
+        el.progSpeed.textContent = `Frames: ${data.frames || '--'}`;
+        el.progEta.textContent = `ETA: ${data.eta || '--'}`;
+        el.progFill.style.width = `${data.percentage}%`;
+        el.progPercent.textContent = `⚡ Gyroflow Stabilizing: ${data.percentage}%`;
+        el.btnStartGrade.disabled = true;
+        el.btnStartGrade.textContent = `Stabilizing In Progress (${data.percentage}%)...`;
+      } else if (data.status === 'encoding') {
         el.progressPanel.style.display = 'flex';
         el.progVideoName.textContent = data.video || 'Encoding';
         el.progSpeed.textContent = `${data.speed || '1.0x'} (${data.fps || 0} fps)`;
